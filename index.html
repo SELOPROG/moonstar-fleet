@@ -813,6 +813,52 @@ tr:hover td{background:rgba(255,255,255,.025)}
           </div>
         </div>
 
+        <div style="margin-bottom:18px">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
+            Tageseinsatzplan
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Fahrername</label>
+              <input class="form-control" id="hm-plan-driver" placeholder="Name des Fahrers">
+            </div>
+            <div class="form-group">
+              <label>Kennzeichen</label>
+              <input class="form-control" id="hm-plan-plate" placeholder="z. B. B-MS 1234">
+            </div>
+            <div class="form-group span2">
+              <label>Tournummern</label>
+              <input class="form-control" id="hm-plan-tour" placeholder="z. B. Tour 12, 18, 21">
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
+            Fahrzeugfotos – Optik (optional)
+          </div>
+          <p style="font-size:.78rem;color:var(--muted2);margin-bottom:10px">Lade Fotos vom äußeren Fahrzeugzustand hoch.</p>
+          <input type="file" id="hm-vehicle-photos-input" accept="image/*" multiple style="display:none">
+          <button type="button" class="btn btn-secondary btn-sm" id="hm-vehicle-photos-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Fotos auswählen
+          </button>
+          <div class="doc-preview-grid" id="hm-vehicle-photos-preview"></div>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
+            Fahrzeugfotos – Innenraum (optional)
+          </div>
+          <p style="font-size:.78rem;color:var(--muted2);margin-bottom:10px">Lade Fotos vom Innenraum des Fahrzeugs hoch.</p>
+          <input type="file" id="hm-interior-photos-input" accept="image/*" multiple style="display:none">
+          <button type="button" class="btn btn-secondary btn-sm" id="hm-interior-photos-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Fotos auswählen
+          </button>
+          <div class="doc-preview-grid" id="hm-interior-photos-preview"></div>
+        </div>
+
         <!-- ID documents upload -->
         <div style="margin-bottom:18px">
           <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
@@ -1319,6 +1365,9 @@ function renderHandoverList(list){
           ${h.km?`<div class="handover-info-item"><label>Kilometerstand</label><span>${Number(h.km).toLocaleString('de-DE')} km</span></div>`:''}
           ${h.notes?`<div class="handover-info-item" style="grid-column:1/-1"><label>Bemerkungen</label><span>${esc(h.notes)}</span></div>`:''}
         </div>
+        ${renderHandoverPlanSection(h)}
+        ${renderHandoverPhotoSection('Fahrzeugoptik',h.vehiclePhotos,'Fahrzeugfoto')}
+        ${renderHandoverPhotoSection('Innenraum',h.interiorPhotos,'Innenraumfoto')}
         ${h.docs&&h.docs.length?`
         <div style="margin-bottom:14px">
           <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Ausweisdokumente (${h.docs.length})</div>
@@ -1337,6 +1386,29 @@ function renderHandoverList(list){
       </div>
     </div>`;
   }).join('')}</div>`;
+}
+function renderHandoverPlanSection(h){
+  if(!h.planDriver&&!h.planPlate&&!h.planTour)return'';
+  return`<div style="margin-bottom:14px">
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Tageseinsatzplan</div>
+    <div class="handover-info-grid">
+      ${h.planDriver?`<div class="handover-info-item"><label>Fahrername</label><span>${esc(h.planDriver)}</span></div>`:''}
+      ${h.planPlate?`<div class="handover-info-item"><label>Kennzeichen</label><span>${esc(h.planPlate)}</span></div>`:''}
+      ${h.planTour?`<div class="handover-info-item" style="grid-column:1/-1"><label>Tournummern</label><span>${esc(h.planTour)}</span></div>`:''}
+    </div>
+  </div>`;
+}
+function renderHandoverPhotoSection(title,photos,labelPrefix){
+  if(!photos||!photos.length)return'';
+  return`<div style="margin-bottom:14px">
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">${esc(title)} (${photos.length})</div>
+    <div class="doc-preview-grid">${photos.map((photo,i)=>`
+      <div class="doc-thumb">
+        <img src="${photo.data}" alt="${esc(photo.name||labelPrefix+' '+(i+1))}">
+        <div class="doc-label">${esc(photo.name||labelPrefix+' '+(i+1))}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
 }
 window.toggleHandoverCard=function(id){
   const el=document.getElementById('hcb-'+id);
@@ -1357,6 +1429,8 @@ window.printHandover=function(id){
   if(!h)return;
   const v=DB.vehicles.find(x=>x.id===h.vehicleId);
   const docsHtml=(h.docs&&h.docs.length)?h.docs.map((d,i)=>`<img src="${d.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Dok ${i+1}">`).join(''):'<em>Keine Dokumente beigefügt</em>';
+  const vehiclePhotosHtml=(h.vehiclePhotos&&h.vehiclePhotos.length)?h.vehiclePhotos.map((photo,i)=>`<img src="${photo.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Fahrzeugfoto ${i+1}">`).join(''):'<em>Keine Fotos beigefügt</em>';
+  const interiorPhotosHtml=(h.interiorPhotos&&h.interiorPhotos.length)?h.interiorPhotos.map((photo,i)=>`<img src="${photo.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Innenraumfoto ${i+1}">`).join(''):'<em>Keine Fotos beigefügt</em>';
   const sigHtml=h.signature?`<img src="${h.signature}" style="max-width:320px;border:1px solid #ccc;border-radius:6px" alt="Unterschrift">`:'<em>Keine Unterschrift</em>';
   const w=window.open('','_blank','width=800,height:650');
   w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Übergabeprotokoll</title>
@@ -1385,6 +1459,15 @@ window.printHandover=function(id){
     <div class="item"><label>Empfänger</label><span>${escPrint(h.to)}</span></div>
   </div>
   ${h.notes?`<h2>Fahrzeugzustand / Bemerkungen</h2><p>${escPrint(h.notes)}</p>`:''}
+  ${(h.planDriver||h.planPlate||h.planTour)?`<h2>Tageseinsatzplan</h2><div class="grid">
+    <div class="item"><label>Fahrername</label><span>${escPrint(h.planDriver||'—')}</span></div>
+    <div class="item"><label>Kennzeichen</label><span>${escPrint(h.planPlate||'—')}</span></div>
+    <div class="item" style="grid-column:1/-1"><label>Tournummern</label><span>${escPrint(h.planTour||'—')}</span></div>
+  </div>`:''}
+  <h2>Fahrzeugoptik</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">${vehiclePhotosHtml}</div>
+  <h2>Innenraum</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">${interiorPhotosHtml}</div>
   <h2>Ausweisdokumente (Führerschein / Personalausweis)</h2>
   <div style="display:flex;flex-wrap:wrap;gap:10px">${docsHtml}</div>
   <h2>Unterschrift des Empfängers</h2>
@@ -1725,7 +1808,7 @@ function renderHandoversList(){
   let list=[...DB.handovers].sort((a,b)=>new Date(b.date)-new Date(a.date));
   if(hoFilterSearch){
     const q=hoFilterSearch.toLowerCase();
-    list=list.filter(h=>[h.from,h.to,h.notes,h.type].some(f=>(f||'').toLowerCase().includes(q))||
+    list=list.filter(h=>[h.from,h.to,h.notes,h.type,h.planDriver,h.planPlate,h.planTour].some(f=>(f||'').toLowerCase().includes(q))||
       (DB.vehicles.find(v=>v.id===h.vehicleId)?.name||'').toLowerCase().includes(q));
   }
   if(hoFilterType)list=list.filter(h=>h.type===hoFilterType);
@@ -1766,6 +1849,9 @@ function renderHandoversList(){
           ${h.km?`<div class="handover-info-item"><label>Kilometerstand</label><span>${Number(h.km).toLocaleString('de-DE')} km</span></div>`:''}
           ${h.notes?`<div class="handover-info-item" style="grid-column:1/-1"><label>Bemerkungen</label><span>${esc(h.notes)}</span></div>`:''}
         </div>
+        ${renderHandoverPlanSection(h)}
+        ${renderHandoverPhotoSection('Fahrzeugoptik',h.vehiclePhotos,'Fahrzeugfoto')}
+        ${renderHandoverPhotoSection('Innenraum',h.interiorPhotos,'Innenraumfoto')}
         ${h.docs&&h.docs.length?`<div style="margin-bottom:14px">
           <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Dokumente (${h.docs.length})</div>
           <div class="doc-preview-grid">${h.docs.map((d,i)=>`<div class="doc-thumb"><img src="${d.data}" alt="Dok"><div class="doc-label">${esc(d.name||'Dok '+(i+1))}</div></div>`).join('')}</div></div>`:''}
@@ -1789,6 +1875,8 @@ document.getElementById('new-handover-global-btn').addEventListener('click',()=>
 
 /* ─── Handover modal logic ────────────────────────────────────── */
 let _hmDocs=[];   // [{name, data}]
+let _hmVehiclePhotos=[];   // [{name, data}]
+let _hmInteriorPhotos=[];   // [{name, data}]
 let _hmSigData=''; // dataURL from canvas
 
 // Signature pad setup
@@ -1842,36 +1930,65 @@ function isSigEmpty(){
   return true;
 }
 
-// Doc uploads
-document.getElementById('hm-docs-btn').addEventListener('click',()=>document.getElementById('hm-docs-input').click());
-document.getElementById('hm-docs-input').addEventListener('change',async e=>{
-  const files=Array.from(e.target.files);
-  for(const f of files){
-    const data=await fileToDataUrl(f);
-    _hmDocs.push({name:f.name,data});
-  }
-  renderDocPreviews();
-  e.target.value='';
-});
-function renderDocPreviews(){
-  const wrap=document.getElementById('hm-docs-preview');
-  if(!_hmDocs.length){wrap.innerHTML='';return;}
-  wrap.innerHTML=_hmDocs.map((d,i)=>`
+// Uploads
+function bindPhotoUpload(buttonId,inputId,store,render){
+  document.getElementById(buttonId).addEventListener('click',()=>document.getElementById(inputId).click());
+  document.getElementById(inputId).addEventListener('change',async e=>{
+    const files=Array.from(e.target.files);
+    for(const f of files){
+      const data=await fileToDataUrl(f);
+      store.push({name:f.name,data});
+    }
+    render();
+    e.target.value='';
+  });
+}
+bindPhotoUpload('hm-docs-btn','hm-docs-input',_hmDocs,renderDocPreviews);
+bindPhotoUpload('hm-vehicle-photos-btn','hm-vehicle-photos-input',_hmVehiclePhotos,renderVehiclePhotoPreviews);
+bindPhotoUpload('hm-interior-photos-btn','hm-interior-photos-input',_hmInteriorPhotos,renderInteriorPhotoPreviews);
+function renderUploadPreviews(items,wrapId,removeFnName,fallbackLabel){
+  const wrap=document.getElementById(wrapId);
+  if(!items.length){wrap.innerHTML='';return;}
+  wrap.innerHTML=items.map((d,i)=>`
     <div class="doc-thumb">
-      <img src="${d.data}" alt="${esc(d.name)}">
-      <div class="doc-label">${esc(d.name)}</div>
-      <button class="doc-remove" onclick="removeDoc(${i})" title="Entfernen">✕</button>
+      <img src="${d.data}" alt="${esc(d.name||fallbackLabel+' '+(i+1))}">
+      <div class="doc-label">${esc(d.name||fallbackLabel+' '+(i+1))}</div>
+      <button class="doc-remove" onclick="${removeFnName}(${i})" title="Entfernen">✕</button>
     </div>`).join('');
 }
+function renderDocPreviews(){
+  renderUploadPreviews(_hmDocs,'hm-docs-preview','removeDoc','Dokument');
+}
+function renderVehiclePhotoPreviews(){
+  renderUploadPreviews(_hmVehiclePhotos,'hm-vehicle-photos-preview','removeVehiclePhoto','Fahrzeugfoto');
+}
+function renderInteriorPhotoPreviews(){
+  renderUploadPreviews(_hmInteriorPhotos,'hm-interior-photos-preview','removeInteriorPhoto','Innenraumfoto');
+}
 window.removeDoc=function(i){_hmDocs.splice(i,1);renderDocPreviews();};
+window.removeVehiclePhoto=function(i){_hmVehiclePhotos.splice(i,1);renderVehiclePhotoPreviews();};
+window.removeInteriorPhoto=function(i){_hmInteriorPhotos.splice(i,1);renderInteriorPhotoPreviews();};
+function replaceUploads(target,items){
+  target.splice(0,target.length,...items);
+}
 
 function populateVehicleSelect(selectedId){
   const sel=document.getElementById('hm-vehicle-sel');
   sel.innerHTML=DB.vehicles.map(v=>`<option value="${v.id}"${v.id===selectedId?' selected':''}>${esc(v.name)} (${esc(v.plate)})</option>`).join('');
 }
+function getSelectedVehiclePlate(){
+  const vehicleId=document.getElementById('hm-vehicle-sel').value;
+  return DB.vehicles.find(v=>v.id===vehicleId)?.plate||'';
+}
+document.getElementById('hm-vehicle-sel').addEventListener('change',()=>{
+  const plateInput=document.getElementById('hm-plan-plate');
+  if(!plateInput.value.trim())plateInput.value=getSelectedVehiclePlate();
+});
 
 window.openHandoverModal=function(vehicleId,editId){
-  _hmDocs=[];
+  replaceUploads(_hmDocs,[]);
+  replaceUploads(_hmVehiclePhotos,[]);
+  replaceUploads(_hmInteriorPhotos,[]);
   sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
   document.getElementById('sig-error').style.display='none';
 
@@ -1890,7 +2007,12 @@ window.openHandoverModal=function(vehicleId,editId){
     document.getElementById('hm-from').value=editObj.from||'';
     document.getElementById('hm-to').value=editObj.to||'';
     document.getElementById('hm-notes').value=editObj.notes||'';
-    _hmDocs=editObj.docs?[...editObj.docs]:[];
+    document.getElementById('hm-plan-driver').value=editObj.planDriver||'';
+    document.getElementById('hm-plan-plate').value=editObj.planPlate||'';
+    document.getElementById('hm-plan-tour').value=editObj.planTour||'';
+    replaceUploads(_hmDocs,editObj.docs?[...editObj.docs]:[]);
+    replaceUploads(_hmVehiclePhotos,editObj.vehiclePhotos?[...editObj.vehiclePhotos]:[]);
+    replaceUploads(_hmInteriorPhotos,editObj.interiorPhotos?[...editObj.interiorPhotos]:[]);
     if(editObj.signature){
       const img=new Image();
       img.onload=()=>{
@@ -1909,8 +2031,13 @@ window.openHandoverModal=function(vehicleId,editId){
     document.getElementById('hm-from').value='';
     document.getElementById('hm-to').value='';
     document.getElementById('hm-notes').value='';
+    document.getElementById('hm-plan-driver').value='';
+    document.getElementById('hm-plan-plate').value=getSelectedVehiclePlate();
+    document.getElementById('hm-plan-tour').value='';
   }
   renderDocPreviews();
+  renderVehiclePhotoPreviews();
+  renderInteriorPhotoPreviews();
   document.getElementById('handover-modal').classList.add('open');
   // resize canvas after modal opens
   setTimeout(resizeSigCanvas,50);
@@ -1929,6 +2056,9 @@ document.getElementById('hm-save').addEventListener('click',()=>{
   const from=document.getElementById('hm-from').value.trim();
   const to=document.getElementById('hm-to').value.trim();
   const notes=document.getElementById('hm-notes').value.trim();
+  const planDriver=document.getElementById('hm-plan-driver').value.trim();
+  const planPlate=document.getElementById('hm-plan-plate').value.trim();
+  const planTour=document.getElementById('hm-plan-tour').value.trim();
   const editId=document.getElementById('hm-id').value;
 
   if(!vehicleId||!date||!from||!to){toast('Bitte alle Pflichtfelder ausfüllen.','error');return;}
@@ -1944,8 +2074,10 @@ document.getElementById('hm-save').addEventListener('click',()=>{
 
   const entry={
     id:editId||uid(),
-    vehicleId,type,date,km,from,to,notes,
+    vehicleId,type,date,km,from,to,notes,planDriver,planPlate,planTour,
     docs:[..._hmDocs],
+    vehiclePhotos:[..._hmVehiclePhotos],
+    interiorPhotos:[..._hmInteriorPhotos],
     signature,
     createdAt:editId?(DB.handovers.find(x=>x.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString(),
   };

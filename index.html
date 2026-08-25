@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🚗 MoonStar Fleet</title>
+  <style>
+    :root {
+      --primary: #1a56db;
+      --primary-dark: #1240a8;
+      --secondary: #6b7280;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --sidebar-w: 240px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: var(--sidebar-w); background: #1e2a3b; color: #cbd5e1;
+      display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+    }
+    #sidebar .brand {
+      padding: 20px 16px 16px; font-size: 1.15rem; font-weight: 700; color: #fff;
+      border-bottom: 1px solid #2e3d52; letter-spacing: .5px;
+    }
+    #sidebar .brand span { color: #60a5fa; }
+    #sidebar nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+    #sidebar nav a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: #94a3b8; text-decoration: none; font-size: .93rem; border-left: 3px solid transparent;
+      transition: background .15s, color .15s;
+    }
+    #sidebar nav a:hover { background: #2e3d52; color: #fff; }
+    #sidebar nav a.active { background: #2e3d52; color: #60a5fa; border-left-color: #60a5fa; font-weight: 600; }
+    #sidebar nav a .icon { font-size: 1.1rem; width: 22px; text-align: center; }
+    #sidebar .footer { padding: 12px 16px; font-size: .75rem; color: #475569; border-top: 1px solid #2e3d52; }
+
+    /* ── Main ── */
+    #main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    #topbar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 14px 28px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    #topbar h1 { font-size: 1.15rem; font-weight: 700; color: var(--text); }
+    #topbar .badge { background: #dbeafe; color: var(--primary); padding: 3px 10px; border-radius: 20px; font-size: .8rem; font-weight: 600; }
+    #content { padding: 28px; flex: 1; }
+
+    /* ── Views ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Cards / Stats ── */
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--surface); border-radius: 10px; padding: 18px 20px;
+      border: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px;
+    }
+    .stat-card .label { font-size: .8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+    .stat-card .value { font-size: 1.9rem; font-weight: 700; }
+    .stat-card.blue .value { color: var(--primary); }
+    .stat-card.green .value { color: var(--success); }
+    .stat-card.yellow .value { color: var(--warning); }
+    .stat-card.red .value { color: var(--danger); }
+
+    /* ── Table Card ── */
+    .card { background: var(--surface); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 28px; }
+    .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .card-header h2 { font-size: 1rem; font-weight: 700; }
+    .card-body { padding: 0; }
+
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    thead th { padding: 10px 14px; text-align: left; background: #f8fafc; color: var(--text-muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
+    tbody tr { border-bottom: 1px solid var(--border); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody td { padding: 10px 14px; vertical-align: middle; }
+
+    /* ── Badge / Status ── */
+    .badge-status {
+      display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: .75rem; font-weight: 600;
+    }
+    .badge-geplant   { background: #dbeafe; color: #1d4ed8; }
+    .badge-gestartet { background: #fef3c7; color: #92400e; }
+    .badge-erledigt  { background: #dcfce7; color: #166534; }
+    .badge-ausgefallen { background: #fee2e2; color: #991b1b; }
+
+    /* Traffic lights for E-Check */
+    .ampel { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: .8rem; }
+    .ampel::before { content: '●'; font-size: 1rem; }
+    .ampel.rot   { color: var(--danger); }
+    .ampel.rot::before { color: var(--danger); }
+    .ampel.gelb  { color: var(--warning); }
+    .ampel.gelb::before { color: var(--warning); }
+    .ampel.gruen { color: var(--success); }
+    .ampel.gruen::before { color: var(--success); }
+
+    /* ── Filter bar ── */
+    .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; }
+    .filter-bar input, .filter-bar select {
+      border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: .87rem;
+      background: var(--surface); color: var(--text); outline: none;
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px #dbeafe; }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 6px; font-size: .87rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--bg); }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+    .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+
+    /* ── Print ── */
+    @media print {
+      #sidebar, #topbar, .filter-bar, .btn { display: none !important; }
+      #main { margin-left: 0; }
+      .card { border: none; box-shadow: none; }
+      table { font-size: .8rem; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      :root { --sidebar-w: 0px; }
+      #sidebar { display: none; }
+      #main { margin-left: 0; }
+      #content { padding: 16px; }
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════ SIDEBAR ════ -->
+<aside id="sidebar">
+  <div class="brand">🚗 MoonStar <span>Fleet</span></div>
+  <nav id="nav">
+    <a href="#" class="active" data-view="dashboard">
+      <span class="icon">📊</span> Dashboard
+    </a>
+    <a href="#" data-view="tageseinsatz">
+      <span class="icon">📋</span> Tageseinsatzplanung
+    </a>
+    <a href="#" data-view="echeck">
+      <span class="icon">⚡</span> E-Check Übersicht
+    </a>
+    <a href="#" data-view="fahrzeuge">
+      <span class="icon">🚗</span> Fahrzeuge
+    </a>
+    <a href="#" data-view="fahrer">
+      <span class="icon">👨‍💼</span> Fahrer
+    </a>
+  </nav>
+  <div class="footer">MoonStar Fleet v1.0</div>
+</aside>
+
+<!-- ════ MAIN ════ -->
+<div id="main">
+  <header id="topbar">
+    <h1 id="page-title">Dashboard</h1>
+    <span class="badge" id="topbar-date"></span>
+  </header>
+
+  <div id="content">
+
+    <!-- ── Dashboard ── -->
+    <section class="view active" id="view-dashboard">
+      <div class="stat-grid" id="stats-grid"></div>
+      <div class="card">
+        <div class="card-header">
+          <h2>Heutige Einsätze – Überblick</h2>
+          <a href="#" class="btn btn-outline" data-view="tageseinsatz">Alle anzeigen →</a>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Fahrzeug</th><th>Fahrer</th><th>Tour</th><th>Uhrzeit</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dashboard-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h2>⚡ E-Check Warnungen (≤14 Tage)</h2>
+          <a href="#" class="btn btn-outline" data-view="echeck">E-Check Übersicht →</a>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Fahrzeug</th><th>Kennzeichen</th><th>Fällig bis</th><th>Resttage</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dashboard-echeck-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Tageseinsatzplanung ── -->
+    <section class="view" id="view-tageseinsatz">
+      <div class="card">
+        <div class="card-header">
+          <h2>📋 Tageseinsatzplanung</h2>
+          <div class="filter-bar">
+            <input type="date" id="filter-date" title="Datum filtern" />
+            <input type="text" id="filter-fahrer" placeholder="Fahrer suchen…" />
+            <select id="filter-status">
+              <option value="">Alle Status</option>
+              <option value="geplant">Geplant</option>
+              <option value="gestartet">Gestartet</option>
+              <option value="erledigt">Erledigt</option>
+              <option value="ausgefallen">Ausgefallen</option>
+            </select>
+            <button class="btn btn-outline" onclick="window.print()">🖨 Drucken</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Fahrzeug</th>
+                <th>Kennzeichen</th>
+                <th>Fahrer</th>
+                <th>Tour</th>
+                <th>Uhrzeit</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tageseinsatz-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── E-Check Übersicht ── -->
+    <section class="view" id="view-echeck">
+      <div class="card">
+        <div class="card-header">
+          <h2>⚡ E-Check Übersicht – Fällig in ≤ 14 Tagen</h2>
+          <div class="filter-bar">
+            <input type="text" id="echeck-search" placeholder="Fahrzeug / Kennzeichen…" />
+            <select id="echeck-filter-status">
+              <option value="">Alle Ampelstatus</option>
+              <option value="rot">🔴 Rot (≤3 Tage / überfällig)</option>
+              <option value="gelb">🟡 Gelb (4–14 Tage)</option>
+              <option value="gruen">🟢 Grün (&gt;14 Tage)</option>
+            </select>
+            <button class="btn btn-outline" onclick="window.print()">🖨 Drucken</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Fahrzeug</th>
+                <th>Kennzeichen</th>
+                <th>Letzter E-Check</th>
+                <th>Fällig bis</th>
+                <th>Resttage</th>
+                <th>Ampelstatus</th>
+                <th>Hinweis</th>
+              </tr>
+            </thead>
+            <tbody id="echeck-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Fahrzeuge ── -->
+    <section class="view" id="view-fahrzeuge">
+      <div class="card">
+        <div class="card-header">
+          <h2>🚗 Fahrzeugübersicht</h2>
+          <div class="filter-bar">
+            <input type="text" id="fz-search" placeholder="Fahrzeug / Kennzeichen…" />
+          </div>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Fahrzeug</th><th>Kennzeichen</th><th>Typ</th><th>Baujahr</th><th>Status</th><th>TÜV fällig</th>
+              </tr>
+            </thead>
+            <tbody id="fz-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Fahrer ── -->
+    <section class="view" id="view-fahrer">
+      <div class="card">
+        <div class="card-header">
+          <h2>👨‍💼 Fahrerverwaltung</h2>
+          <div class="filter-bar">
+            <input type="text" id="dr-search" placeholder="Name suchen…" />
+          </div>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th><th>Personalnr.</th><th>Führerschein bis</th><th>Fahrzeug</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dr-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+'use strict';
+
+// ════════════════════════════════════════════════════
+// SEED DATA
+// ════════════════════════════════════════════════════
+
+const SEED_TAGESEINSATZ = [
+  { id:1, datum:'2026-08-25', fahrzeug:'Sprinter 316 CDI', kennzeichen:'HH-MF 1201', fahrer:'Mehmet Yilmaz',  tour:'Tour 12 – Altona',       uhrzeit:'06:30', status:'geplant'   },
+  { id:2, datum:'2026-08-25', fahrzeug:'Crafter 35',       kennzeichen:'HH-MF 1202', fahrer:'Sarah Becker',   tour:'Tour 08 – Eimsbüttel',  uhrzeit:'07:15', status:'geplant'   },
+  { id:3, datum:'2026-08-25', fahrzeug:'Transit Custom',   kennzeichen:'HH-MF 1203', fahrer:'Ali Demir',      tour:'Tour 15 – Wandsbek',    uhrzeit:'08:00', status:'erledigt'  },
+  { id:4, datum:'2026-08-25', fahrzeug:'Daily 35S',        kennzeichen:'HH-MF 1204', fahrer:'Klaus Müller',   tour:'Tour 03 – Bergedorf',   uhrzeit:'06:00', status:'gestartet' },
+  { id:5, datum:'2026-08-25', fahrzeug:'Sprinter 513 CDI', kennzeichen:'HH-MF 1205', fahrer:'Elena Petrova',  tour:'Tour 21 – Harburg',     uhrzeit:'09:30', status:'geplant'   },
+  { id:6, datum:'2026-08-25', fahrzeug:'Vito Tourer',      kennzeichen:'HH-MF 1206', fahrer:'Hassan Al-Amin', tour:'Tour 07 – Mitte',       uhrzeit:'07:00', status:'ausgefallen'},
+  { id:7, datum:'2026-08-25', fahrzeug:'Boxer L3H2',       kennzeichen:'HH-MF 1207', fahrer:'Nina Koch',      tour:'Tour 18 – Poppenbüttel',uhrzeit:'08:45', status:'geplant'   },
+  { id:8, datum:'2026-08-25', fahrzeug:'Sprinter 316 CDI', kennzeichen:'HH-MF 1208', fahrer:'Tobias Richter', tour:'Tour 10 – Rahlstedt',   uhrzeit:'06:15', status:'erledigt'  },
+  { id:9, datum:'2026-08-26', fahrzeug:'Crafter 35',       kennzeichen:'HH-MF 1202', fahrer:'Sarah Becker',   tour:'Tour 08 – Eimsbüttel',  uhrzeit:'07:15', status:'geplant'   },
+  { id:10,datum:'2026-08-26', fahrzeug:'Daily 35S',        kennzeichen:'HH-MF 1204', fahrer:'Klaus Müller',   tour:'Tour 03 – Bergedorf',   uhrzeit:'06:00', status:'geplant'   },
+];
+
+const SEED_ECHECK = [
+  { id:1, fahrzeug:'Sprinter 316 CDI', kennzeichen:'HH-MF 1201', letzterCheck:'2026-08-12', faelligBis:'2026-08-26' },
+  { id:2, fahrzeug:'Crafter 35',       kennzeichen:'HH-MF 1202', letzterCheck:'2026-08-15', faelligBis:'2026-08-29' },
+  { id:3, fahrzeug:'Transit Custom',   kennzeichen:'HH-MF 1203', letzterCheck:'2026-08-20', faelligBis:'2026-09-03' },
+  { id:4, fahrzeug:'Daily 35S',        kennzeichen:'HH-MF 1204', letzterCheck:'2026-08-10', faelligBis:'2026-08-24' },
+  { id:5, fahrzeug:'Sprinter 513 CDI', kennzeichen:'HH-MF 1205', letzterCheck:'2026-08-18', faelligBis:'2026-09-01' },
+  { id:6, fahrzeug:'Vito Tourer',      kennzeichen:'HH-MF 1206', letzterCheck:'2026-08-22', faelligBis:'2026-09-05' },
+  { id:7, fahrzeug:'Boxer L3H2',       kennzeichen:'HH-MF 1207', letzterCheck:'2026-08-24', faelligBis:'2026-09-07' },
+  { id:8, fahrzeug:'Sprinter 316 CDI', kennzeichen:'HH-MF 1208', letzterCheck:'2026-08-05', faelligBis:'2026-08-19' },
+];
+
+const SEED_FAHRZEUGE = [
+  { id:1, fahrzeug:'Sprinter 316 CDI', kennzeichen:'HH-MF 1201', typ:'Transporter', baujahr:2021, status:'aktiv',    tuev:'2027-03-01' },
+  { id:2, fahrzeug:'Crafter 35',       kennzeichen:'HH-MF 1202', typ:'Transporter', baujahr:2020, status:'aktiv',    tuev:'2026-11-15' },
+  { id:3, fahrzeug:'Transit Custom',   kennzeichen:'HH-MF 1203', typ:'Kastenwagen', baujahr:2022, status:'aktiv',    tuev:'2027-05-20' },
+  { id:4, fahrzeug:'Daily 35S',        kennzeichen:'HH-MF 1204', typ:'LKW',         baujahr:2019, status:'werkstatt',tuev:'2026-09-10' },
+  { id:5, fahrzeug:'Sprinter 513 CDI', kennzeichen:'HH-MF 1205', typ:'Transporter', baujahr:2021, status:'aktiv',    tuev:'2027-01-25' },
+  { id:6, fahrzeug:'Vito Tourer',      kennzeichen:'HH-MF 1206', typ:'PKW',         baujahr:2020, status:'aktiv',    tuev:'2026-10-08' },
+  { id:7, fahrzeug:'Boxer L3H2',       kennzeichen:'HH-MF 1207', typ:'Transporter', baujahr:2023, status:'aktiv',    tuev:'2028-02-14' },
+  { id:8, fahrzeug:'Sprinter 316 CDI', kennzeichen:'HH-MF 1208', typ:'Transporter', baujahr:2020, status:'aktiv',    tuev:'2026-12-30' },
+];
+
+const SEED_FAHRER = [
+  { id:1, name:'Mehmet Yilmaz',  pnr:'F-101', fuehrerscheinBis:'2028-04-15', fahrzeug:'HH-MF 1201', status:'aktiv'  },
+  { id:2, name:'Sarah Becker',   pnr:'F-102', fuehrerscheinBis:'2027-09-20', fahrzeug:'HH-MF 1202', status:'aktiv'  },
+  { id:3, name:'Ali Demir',      pnr:'F-103', fuehrerscheinBis:'2026-10-01', fahrzeug:'HH-MF 1203', status:'aktiv'  },
+  { id:4, name:'Klaus Müller',   pnr:'F-104', fuehrerscheinBis:'2029-01-10', fahrzeug:'HH-MF 1204', status:'krank'  },
+  { id:5, name:'Elena Petrova',  pnr:'F-105', fuehrerscheinBis:'2027-06-30', fahrzeug:'HH-MF 1205', status:'aktiv'  },
+  { id:6, name:'Hassan Al-Amin', pnr:'F-106', fuehrerscheinBis:'2028-11-22', fahrzeug:'HH-MF 1206', status:'aktiv'  },
+  { id:7, name:'Nina Koch',      pnr:'F-107', fuehrerscheinBis:'2027-03-18', fahrzeug:'HH-MF 1207', status:'aktiv'  },
+  { id:8, name:'Tobias Richter', pnr:'F-108', fuehrerscheinBis:'2028-08-05', fahrzeug:'HH-MF 1208', status:'urlaub' },
+];
+
+// ════════════════════════════════════════════════════
+// localStorage helpers
+// ════════════════════════════════════════════════════
+
+function loadData(key, seed) {
+  const raw = localStorage.getItem(key);
+  if (raw) return JSON.parse(raw);
+  localStorage.setItem(key, JSON.stringify(seed));
+  return seed;
+}
+
+const data = {
+  tageseinsatz: loadData('mf_tageseinsatz', SEED_TAGESEINSATZ),
+  echeck:       loadData('mf_echeck',       SEED_ECHECK),
+  fahrzeuge:    loadData('mf_fahrzeuge',     SEED_FAHRZEUGE),
+  fahrer:       loadData('mf_fahrer',        SEED_FAHRER),
+};
+
+// ════════════════════════════════════════════════════
+// Utilities
+// ════════════════════════════════════════════════════
+
+function fmtDate(iso) {
+  if (!iso) return '–';
+  const [y,m,d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+function daysUntil(iso) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(iso); target.setHours(0,0,0,0);
+  return Math.round((target - today) / 86400000);
+}
+
+function ampelClass(days) {
+  if (days <= 3) return 'rot';
+  if (days <= 14) return 'gelb';
+  return 'gruen';
+}
+
+function ampelLabel(days) {
+  if (days < 0) return `${Math.abs(days)} Tage überfällig`;
+  if (days === 0) return 'Heute fällig!';
+  return `${days} Tag${days === 1 ? '' : 'e'}`;
+}
+
+function statusBadge(s) {
+  const map = { geplant:'badge-geplant', gestartet:'badge-gestartet', erledigt:'badge-erledigt', ausgefallen:'badge-ausgefallen' };
+  return `<span class="badge-status ${map[s] || ''}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+}
+
+function fahrzeugStatus(s) {
+  const m = { aktiv:'badge-erledigt', werkstatt:'badge-gestartet', inaktiv:'badge-ausgefallen' };
+  return `<span class="badge-status ${m[s] || ''}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+}
+
+function fahrerStatus(s) {
+  const m = { aktiv:'badge-erledigt', krank:'badge-ausgefallen', urlaub:'badge-gestartet' };
+  return `<span class="badge-status ${m[s] || ''}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+}
+
+// ════════════════════════════════════════════════════
+// Renderers
+// ════════════════════════════════════════════════════
+
+function renderTageseinsatz() {
+  const filterDate   = document.getElementById('filter-date').value;
+  const filterFahrer = document.getElementById('filter-fahrer').value.toLowerCase();
+  const filterStatus = document.getElementById('filter-status').value;
+  const today = new Date().toISOString().slice(0,10);
+
+  let rows = data.tageseinsatz.filter(r => {
+    if (filterDate   && r.datum !== filterDate) return false;
+    if (filterFahrer && !r.fahrer.toLowerCase().includes(filterFahrer)) return false;
+    if (filterStatus && r.status !== filterStatus) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('tageseinsatz-body');
+  tbody.innerHTML = rows.length === 0
+    ? '<tr><td colspan="7" class="empty"><div class="icon">📋</div><p>Keine Einträge gefunden.</p></td></tr>'
+    : rows.map(r => `
+      <tr>
+        <td>${fmtDate(r.datum)}</td>
+        <td><strong>${r.fahrzeug}</strong></td>
+        <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px">${r.kennzeichen}</code></td>
+        <td>${r.fahrer}</td>
+        <td>${r.tour}</td>
+        <td>${r.uhrzeit}</td>
+        <td>${statusBadge(r.status)}</td>
+      </tr>`).join('');
+
+  // Set filter date default to today if empty
+  if (!filterDate) document.getElementById('filter-date').value = today;
+}
+
+function renderEcheck() {
+  const search = document.getElementById('echeck-search').value.toLowerCase();
+  const filterStatus = document.getElementById('echeck-filter-status').value;
+
+  let rows = data.echeck.map(r => ({ ...r, days: daysUntil(r.faelligBis) }));
+
+  // Sort by days (most urgent first)
+  rows.sort((a,b) => a.days - b.days);
+
+  rows = rows.filter(r => {
+    if (search && !r.fahrzeug.toLowerCase().includes(search) && !r.kennzeichen.toLowerCase().includes(search)) return false;
+    if (filterStatus && ampelClass(r.days) !== filterStatus) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('echeck-body');
+  tbody.innerHTML = rows.length === 0
+    ? '<tr><td colspan="7" class="empty"><div class="icon">⚡</div><p>Keine Einträge gefunden.</p></td></tr>'
+    : rows.map(r => {
+        const cls = ampelClass(r.days);
+        const lbl = ampelLabel(r.days);
+        const hinweis = r.days < 0 ? '❗ Termin überfällig!' : r.days === 0 ? '⚠️ Heute fällig!' : r.days <= 3 ? '🔴 Sofort einplanen' : r.days <= 14 ? '🟡 Bald fällig' : '✅ OK';
+        return `<tr>
+          <td><strong>${r.fahrzeug}</strong></td>
+          <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px">${r.kennzeichen}</code></td>
+          <td>${fmtDate(r.letzterCheck)}</td>
+          <td>${fmtDate(r.faelligBis)}</td>
+          <td>${lbl}</td>
+          <td><span class="ampel ${cls}">${cls.charAt(0).toUpperCase()+cls.slice(1)}</span></td>
+          <td>${hinweis}</td>
+        </tr>`;
+      }).join('');
+}
+
+function renderFahrzeuge() {
+  const search = document.getElementById('fz-search').value.toLowerCase();
+  let rows = data.fahrzeuge.filter(r =>
+    !search || r.fahrzeug.toLowerCase().includes(search) || r.kennzeichen.toLowerCase().includes(search)
+  );
+  document.getElementById('fz-body').innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${r.fahrzeug}</strong></td>
+      <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px">${r.kennzeichen}</code></td>
+      <td>${r.typ}</td>
+      <td>${r.baujahr}</td>
+      <td>${fahrzeugStatus(r.status)}</td>
+      <td>${fmtDate(r.tuev)}</td>
+    </tr>`).join('');
+}
+
+function renderFahrer() {
+  const search = document.getElementById('dr-search').value.toLowerCase();
+  let rows = data.fahrer.filter(r => !search || r.name.toLowerCase().includes(search));
+  document.getElementById('dr-body').innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${r.name}</strong></td>
+      <td>${r.pnr}</td>
+      <td>${fmtDate(r.fuehrerscheinBis)}</td>
+      <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px">${r.fahrzeug}</code></td>
+      <td>${fahrerStatus(r.status)}</td>
+    </tr>`).join('');
+}
+
+function renderDashboard() {
+  const today = new Date().toISOString().slice(0,10);
+  const todayRows = data.tageseinsatz.filter(r => r.datum === today);
+  const echeckRows = data.echeck.map(r => ({ ...r, days: daysUntil(r.faelligBis) }));
+  const urgent = echeckRows.filter(r => r.days <= 14);
+  const overdue = echeckRows.filter(r => r.days < 0);
+
+  // Stats
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card blue"><div class="label">Fahrzeuge gesamt</div><div class="value">${data.fahrzeuge.length}</div></div>
+    <div class="stat-card green"><div class="label">Heutige Einsätze</div><div class="value">${todayRows.length}</div></div>
+    <div class="stat-card yellow"><div class="label">E-Check fällig (≤14T)</div><div class="value">${urgent.length}</div></div>
+    <div class="stat-card red"><div class="label">E-Check überfällig</div><div class="value">${overdue.length}</div></div>
+  `;
+
+  // Today's dispatch table
+  document.getElementById('dashboard-table-body').innerHTML = todayRows.length === 0
+    ? '<tr><td colspan="5" style="text-align:center;padding:20px;color:#6b7280">Keine Einsätze für heute.</td></tr>'
+    : todayRows.map(r => `<tr>
+        <td><strong>${r.fahrzeug}</strong></td>
+        <td>${r.fahrer}</td>
+        <td>${r.tour}</td>
+        <td>${r.uhrzeit}</td>
+        <td>${statusBadge(r.status)}</td>
+      </tr>`).join('');
+
+  // E-Check warnings
+  const warnRows = echeckRows.filter(r => r.days <= 14).sort((a,b) => a.days - b.days);
+  document.getElementById('dashboard-echeck-body').innerHTML = warnRows.length === 0
+    ? '<tr><td colspan="5" style="text-align:center;padding:20px;color:#6b7280">Keine E-Check Warnungen.</td></tr>'
+    : warnRows.map(r => {
+        const cls = ampelClass(r.days);
+        return `<tr>
+          <td><strong>${r.fahrzeug}</strong></td>
+          <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px">${r.kennzeichen}</code></td>
+          <td>${fmtDate(r.faelligBis)}</td>
+          <td>${ampelLabel(r.days)}</td>
+          <td><span class="ampel ${cls}">${cls.charAt(0).toUpperCase()+cls.slice(1)}</span></td>
+        </tr>`;
+      }).join('');
+}
+
+// ════════════════════════════════════════════════════
+// Navigation
+// ════════════════════════════════════════════════════
+
+const VIEWS = {
+  dashboard:    { title: 'Dashboard',           render: renderDashboard },
+  tageseinsatz: { title: 'Tageseinsatzplanung', render: renderTageseinsatz },
+  echeck:       { title: 'E-Check Übersicht',   render: renderEcheck },
+  fahrzeuge:    { title: 'Fahrzeuge',            render: renderFahrzeuge },
+  fahrer:       { title: 'Fahrer',               render: renderFahrer },
+};
+
+function showView(name) {
+  if (!VIEWS[name]) return;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('#nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById(`view-${name}`).classList.add('active');
+  document.querySelector(`[data-view="${name}"]`).classList.add('active');
+  document.getElementById('page-title').textContent = VIEWS[name].title;
+  VIEWS[name].render();
+}
+
+document.getElementById('nav').addEventListener('click', e => {
+  const a = e.target.closest('[data-view]');
+  if (!a) return;
+  e.preventDefault();
+  showView(a.dataset.view);
+});
+
+// Dashboard shortcut links
+document.querySelectorAll('[data-view]').forEach(el => {
+  if (el.closest('#nav')) return; // handled above
+  el.addEventListener('click', e => { e.preventDefault(); showView(el.dataset.view); });
+});
+
+// Filters
+document.getElementById('filter-date').addEventListener('change', renderTageseinsatz);
+document.getElementById('filter-fahrer').addEventListener('input', renderTageseinsatz);
+document.getElementById('filter-status').addEventListener('change', renderTageseinsatz);
+document.getElementById('echeck-search').addEventListener('input', renderEcheck);
+document.getElementById('echeck-filter-status').addEventListener('change', renderEcheck);
+document.getElementById('fz-search').addEventListener('input', renderFahrzeuge);
+document.getElementById('dr-search').addEventListener('input', renderFahrer);
+
+// ════════════════════════════════════════════════════
+// Init
+// ════════════════════════════════════════════════════
+
+(function init() {
+  const now = new Date();
+  document.getElementById('topbar-date').textContent = now.toLocaleDateString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', year:'numeric' });
+  document.getElementById('filter-date').value = now.toISOString().slice(0,10);
+  renderDashboard();
+})();
+</script>
+</body>
+</html>

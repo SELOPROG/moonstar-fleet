@@ -445,6 +445,31 @@ tr:hover td{background:rgba(255,255,255,.025)}
 }
 #sidebar-overlay.open{display:block}
 
+/* ─── Tageseinsatzplan & E-Check styles ─────────────────────────── */
+.echeck-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:18px}
+.echeck-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  background:rgba(255,255,255,.035);border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+}
+.echeck-item input[type=checkbox]{width:17px;height:17px;accent-color:var(--primary);flex-shrink:0;cursor:pointer}
+.echeck-item label{font-size:.88rem;cursor:pointer;user-select:none;flex:1}
+.echeck-section-title{
+  font-size:.78rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--muted2);
+  margin:18px 0 8px;grid-column:1/-1;
+}
+.badge-echeck-ok{background:rgba(34,197,94,.14);color:#4ade80}
+.badge-echeck-fail{background:rgba(239,68,68,.12);color:#fca5a5}
+.badge-echeck-pending{background:rgba(245,158,11,.14);color:#fbbf24}
+.plan-tour-badge{
+  display:inline-block;padding:2px 8px;border-radius:6px;
+  font-size:.75rem;font-weight:700;
+  background:rgba(56,189,248,.12);color:var(--primary);
+  margin:2px;
+}
+
 /* ─── Handover / signature styles ───────────────────────────────── */
 .sig-canvas-wrap{
   border:1px solid var(--border2);border-radius:var(--radius-sm);
@@ -534,6 +559,14 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <div class="nav-item" data-view="handovers">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Übergabeprotokolle
+    </div>
+    <div class="nav-item" data-view="dailyplans">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/></svg>
+      Tageseinsatzplan
+    </div>
+    <div class="nav-item" data-view="echecks">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      E-Check
     </div>
     <div class="nav-section">Aktionen</div>
     <div class="nav-item" id="nav-add">
@@ -650,6 +683,63 @@ tr:hover td{background:rgba(255,255,255,.025)}
         <button class="btn btn-secondary btn-sm" id="ho-clear-filters">Filter löschen</button>
       </div>
       <div id="handovers-list-container"></div>
+    </div>
+
+    <!-- ─── TAGESEINSATZPLAN ───────────────────────────────────── -->
+    <div class="view" id="view-dailyplans">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-size:1.2rem;font-weight:800">Tageseinsatzpläne</h2>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Tagesplanung: Fahrer, Fahrzeug und Touren verwalten</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="new-dailyplan-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Neuer Plan
+        </button>
+      </div>
+      <div class="filter-bar" style="margin-bottom:16px">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" id="dp-search" placeholder="Suchen nach Fahrer, Fahrzeug, Tour …">
+        </div>
+        <input class="filter-select" id="dp-filter-date" type="date" style="padding:10px 14px;background:var(--panel);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:.9rem;outline:none" title="Nach Datum filtern">
+        <select class="filter-select" id="dp-filter-vehicle">
+          <option value="">Alle Fahrzeuge</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="dp-clear-filters">Filter löschen</button>
+      </div>
+      <div id="dailyplans-container"></div>
+    </div>
+
+    <!-- ─── E-CHECK ────────────────────────────────────────────── -->
+    <div class="view" id="view-echecks">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-size:1.2rem;font-weight:800">E-Check – Fahrzeugprüfung</h2>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Elektronische Fahrzeugchecks – Checkliste vor jedem Einsatz</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="new-echeck-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Neuer E-Check
+        </button>
+      </div>
+      <div class="filter-bar" style="margin-bottom:16px">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" id="ec-search" placeholder="Suchen nach Fahrer, Fahrzeug …">
+        </div>
+        <select class="filter-select" id="ec-filter-vehicle">
+          <option value="">Alle Fahrzeuge</option>
+        </select>
+        <select class="filter-select" id="ec-filter-result">
+          <option value="">Alle Ergebnisse</option>
+          <option value="ok">Bestanden</option>
+          <option value="fail">Mängel</option>
+          <option value="pending">Offen</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="ec-clear-filters">Filter löschen</button>
+      </div>
+      <div id="echecks-container"></div>
     </div>
 
   </div><!-- /content -->
@@ -897,6 +987,106 @@ tr:hover td{background:rgba(255,255,255,.025)}
   </div>
 </div>
 
+<!-- ═══ DAILY PLAN MODAL ════════════════════════════════════════ -->
+<div class="modal-overlay" id="dailyplan-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <span class="modal-title" id="dp-modal-title">Tageseinsatzplan erstellen</span>
+      <button class="btn btn-icon btn-ghost" id="dp-modal-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="dailyplan-form" class="form-grid">
+        <input type="hidden" id="dp-id">
+        <div class="form-group">
+          <label>Datum *</label>
+          <input class="form-control" id="dp-date" type="date" required>
+        </div>
+        <div class="form-group">
+          <label>Fahrzeug *</label>
+          <select class="form-control" id="dp-vehicle-sel" required></select>
+        </div>
+        <div class="form-group">
+          <label>Fahrername *</label>
+          <input class="form-control" id="dp-driver" placeholder="Name des Fahrers" required>
+        </div>
+        <div class="form-group">
+          <label>Dienstbeginn</label>
+          <input class="form-control" id="dp-start" type="time" placeholder="08:00">
+        </div>
+        <div class="form-group">
+          <label>Dienstende</label>
+          <input class="form-control" id="dp-end" type="time" placeholder="16:00">
+        </div>
+        <div class="form-group">
+          <label>Startkm</label>
+          <input class="form-control" id="dp-km-start" type="number" min="0" placeholder="z. B. 85000">
+        </div>
+        <div class="form-group span2">
+          <label>Tournummern / Routen</label>
+          <input class="form-control" id="dp-tours" placeholder="z. B. Tour 12, 18, 21">
+        </div>
+        <div class="form-group span2">
+          <label>Bemerkungen</label>
+          <textarea class="form-control" id="dp-notes" placeholder="Besondere Vorkommnisse, Anweisungen …"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="dp-modal-cancel">Abbrechen</button>
+      <button class="btn btn-primary" id="dp-modal-save">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ E-CHECK MODAL ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="echeck-modal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <span class="modal-title" id="ec-modal-title">E-Check durchführen</span>
+      <button class="btn btn-icon btn-ghost" id="ec-modal-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="echeck-form">
+        <input type="hidden" id="ec-id">
+        <div class="form-grid" style="margin-bottom:18px">
+          <div class="form-group">
+            <label>Datum *</label>
+            <input class="form-control" id="ec-date" type="date" required>
+          </div>
+          <div class="form-group">
+            <label>Fahrzeug *</label>
+            <select class="form-control" id="ec-vehicle-sel" required></select>
+          </div>
+          <div class="form-group">
+            <label>Prüfer (Name) *</label>
+            <input class="form-control" id="ec-inspector" placeholder="Name des Prüfers" required>
+          </div>
+          <div class="form-group">
+            <label>Kilometerstand</label>
+            <input class="form-control" id="ec-km" type="number" min="0" placeholder="Aktueller Km-Stand">
+          </div>
+        </div>
+
+        <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:10px">Prüfpunkte</div>
+        <div class="echeck-grid" id="ec-checklist-grid"></div>
+
+        <div class="form-group" style="margin-top:8px">
+          <label>Mängelbeschreibung / Bemerkungen</label>
+          <textarea class="form-control" id="ec-notes" placeholder="Festgestellte Mängel, sonstige Hinweise …"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="ec-modal-cancel">Abbrechen</button>
+      <button class="btn btn-primary" id="ec-modal-save">E-Check speichern</button>
+    </div>
+  </div>
+</div>
+
 <!-- ─── Toast ─────────────────────────────────────────────────── -->
 <div id="toast"></div>
 
@@ -962,12 +1152,14 @@ let DB;
 function initDB(){
   DB=loadData();
   if(!DB){
-    DB={vehicles:[],maintenance:[],repairs:[],damages:[],tickets:[],handovers:[]};
+    DB={vehicles:[],maintenance:[],repairs:[],damages:[],tickets:[],handovers:[],dailyPlans:[],echecks:[]};
     seedDemo();
     saveData(DB);
   }
   // migrate older data
   if(!DB.handovers)DB.handovers=[];
+  if(!DB.dailyPlans)DB.dailyPlans=[];
+  if(!DB.echecks)DB.echecks=[];
 }
 
 /* ─── Demo seed data ──────────────────────────────────────────── */
@@ -1019,7 +1211,7 @@ function navigate(view,vehicleId){
   });
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
 
-  const titles={dashboard:'Dashboard',vehicles:'Fahrzeuge',detail:'Fahrzeugdetails',handovers:'Übergabeprotokolle'};
+  const titles={dashboard:'Dashboard',vehicles:'Fahrzeuge',detail:'Fahrzeugdetails',handovers:'Übergabeprotokolle',dailyplans:'Tageseinsatzplan',echecks:'E-Check'};
   document.getElementById('topbar-title').textContent=titles[view]||'';
 
   if(view==='detail'&&vehicleId){
@@ -1031,6 +1223,8 @@ function navigate(view,vehicleId){
     if(view==='dashboard')renderDashboard();
     if(view==='vehicles')renderVehicles();
     if(view==='handovers')renderHandoversList();
+    if(view==='dailyplans')renderDailyPlans();
+    if(view==='echecks')renderEChecks();
   }
   currentView=view;
   closeSidebar();
@@ -1049,6 +1243,8 @@ function renderDashboard(){
     {label:'Reserve',value:counts['Reserve']||0,cls:'purple'},
     {label:'Offene Schäden',value:DB.damages.filter(d=>d.status==='Offen').length,cls:'red'},
     {label:'Übergaben gesamt',value:DB.handovers.length,cls:'orange'},
+    {label:'Pläne heute',value:(DB.dailyPlans||[]).filter(p=>p.date===new Date().toISOString().slice(0,10)).length,cls:'blue'},
+    {label:'E-Checks (Mängel)',value:(DB.echecks||[]).filter(e=>echeckResult(e.checks)==='fail').length,cls:'red'},
   ];
   document.getElementById('dash-stats').innerHTML=statCards.map(c=>`
     <div class="stat-card ${c.cls}">
@@ -2110,6 +2306,8 @@ document.getElementById('importFile').addEventListener('change',async e=>{
     if(!DB.damages)DB.damages=[];
     if(!DB.tickets)DB.tickets=[];
     if(!DB.handovers)DB.handovers=[];
+    if(!DB.dailyPlans)DB.dailyPlans=[];
+    if(!DB.echecks)DB.echecks=[];
     saveData(DB);
     toast('Daten importiert.');
     navigate(currentView);
@@ -2121,7 +2319,7 @@ document.getElementById('importFile').addEventListener('change',async e=>{
 document.getElementById('nav-reset').addEventListener('click',()=>{
   if(!confirm('Wirklich ALLE Daten löschen? Dies kann nicht rückgängig gemacht werden.'))return;
   localStorage.removeItem(SK);
-  DB={vehicles:[],maintenance:[],repairs:[],damages:[],tickets:[],handovers:[]};
+  DB={vehicles:[],maintenance:[],repairs:[],damages:[],tickets:[],handovers:[],dailyPlans:[],echecks:[]};
   toast('Alle Daten gelöscht.');
   navigate('dashboard');
 });
@@ -2149,6 +2347,405 @@ function fileToDataUrl(file){
     r.readAsDataURL(file);
   });
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   TAGESEINSATZPLAN MODULE
+   ═════════════════════════════════════════════════════════════== */
+
+/* ─── Tageseinsatzplan – render ───────────────────────────────── */
+let dpFilterSearch='', dpFilterDate='', dpFilterVehicle='';
+
+function renderDailyPlans(){
+  const vSel=document.getElementById('dp-filter-vehicle');
+  const prevV=vSel.value;
+  vSel.innerHTML=`<option value="">Alle Fahrzeuge</option>`+DB.vehicles.map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+  if(prevV)vSel.value=prevV;
+
+  let list=[...(DB.dailyPlans||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  if(dpFilterSearch){
+    const q=dpFilterSearch.toLowerCase();
+    list=list.filter(p=>[p.driver,p.tours,p.notes].some(f=>(f||'').toLowerCase().includes(q))||
+      (DB.vehicles.find(v=>v.id===p.vehicleId)?.name||'').toLowerCase().includes(q));
+  }
+  if(dpFilterDate)list=list.filter(p=>p.date===dpFilterDate);
+  if(dpFilterVehicle)list=list.filter(p=>p.vehicleId===dpFilterVehicle);
+
+  const container=document.getElementById('dailyplans-container');
+  if(list.length===0){
+    container.innerHTML=`<div class="empty" style="padding:60px 0">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Keine Tageseinsatzpläne gefunden</span></div>`;
+    return;
+  }
+  container.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr>
+      <th>Datum</th><th>Fahrzeug</th><th>Fahrer</th>
+      <th>Dienst</th><th>Touren</th><th>Km-Start</th><th>Bemerkung</th><th></th>
+    </tr></thead>
+    <tbody>${list.map(p=>{
+      const v=DB.vehicles.find(x=>x.id===p.vehicleId);
+      const tours=(p.tours||'').split(/[,\n]/).map(t=>t.trim()).filter(Boolean);
+      const toursHtml=tours.length?tours.map(t=>`<span class="plan-tour-badge">${esc(t)}</span>`).join(''):'—';
+      return`<tr>
+        <td><strong>${fmtDate(p.date)}</strong></td>
+        <td>
+          <span onclick="navigate('detail','${v?.id}')" style="cursor:pointer;color:var(--primary);font-weight:600">${esc(v?.name||'—')}</span>
+          <div style="font-size:.75rem;color:var(--muted)">${esc(v?.plate||'')}</div>
+        </td>
+        <td>${esc(p.driver)}</td>
+        <td style="white-space:nowrap">${esc(p.start||'—')}${p.end?' – '+esc(p.end):''}</td>
+        <td>${toursHtml}</td>
+        <td>${p.kmStart?Number(p.kmStart).toLocaleString('de-DE')+' km':'—'}</td>
+        <td style="max-width:180px;white-space:pre-wrap">${esc(p.notes||'')}</td>
+        <td>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-ghost btn-sm btn-icon" title="Bearbeiten" onclick="openDailyPlanModal('${p.id}')">✏</button>
+            <button class="btn btn-danger btn-sm btn-icon" title="Löschen" onclick="deleteDailyPlan('${p.id}')">✕</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+/* ─── Tageseinsatzplan – modal ────────────────────────────────── */
+function openDailyPlanModal(editId){
+  const editObj=editId?DB.dailyPlans.find(x=>x.id===editId):null;
+  document.getElementById('dp-modal-title').textContent=editId?'Tageseinsatzplan bearbeiten':'Tageseinsatzplan erstellen';
+  document.getElementById('dp-id').value=editId||'';
+
+  // populate vehicle select
+  const vSel=document.getElementById('dp-vehicle-sel');
+  vSel.innerHTML=DB.vehicles.map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+
+  if(editObj){
+    vSel.value=editObj.vehicleId;
+    document.getElementById('dp-date').value=editObj.date||'';
+    document.getElementById('dp-driver').value=editObj.driver||'';
+    document.getElementById('dp-start').value=editObj.start||'';
+    document.getElementById('dp-end').value=editObj.end||'';
+    document.getElementById('dp-km-start').value=editObj.kmStart||'';
+    document.getElementById('dp-tours').value=editObj.tours||'';
+    document.getElementById('dp-notes').value=editObj.notes||'';
+  } else {
+    document.getElementById('dp-date').value=new Date().toISOString().slice(0,10);
+    document.getElementById('dp-driver').value='';
+    document.getElementById('dp-start').value='';
+    document.getElementById('dp-end').value='';
+    document.getElementById('dp-km-start').value='';
+    document.getElementById('dp-tours').value='';
+    document.getElementById('dp-notes').value='';
+    // prefill driver from first vehicle
+    const firstVehicle=DB.vehicles[0];
+    if(firstVehicle&&firstVehicle.driver)document.getElementById('dp-driver').value=firstVehicle.driver;
+  }
+  document.getElementById('dailyplan-modal').classList.add('open');
+}
+window.openDailyPlanModal=openDailyPlanModal;
+
+function closeDailyPlanModal(){document.getElementById('dailyplan-modal').classList.remove('open')}
+document.getElementById('dp-modal-close').addEventListener('click',closeDailyPlanModal);
+document.getElementById('dp-modal-cancel').addEventListener('click',closeDailyPlanModal);
+document.getElementById('dailyplan-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDailyPlanModal()});
+
+document.getElementById('dp-modal-save').addEventListener('click',()=>{
+  const editId=document.getElementById('dp-id').value;
+  const vehicleId=document.getElementById('dp-vehicle-sel').value;
+  const date=document.getElementById('dp-date').value;
+  const driver=document.getElementById('dp-driver').value.trim();
+  if(!vehicleId||!date||!driver){toast('Bitte Datum, Fahrzeug und Fahrer ausfüllen.','error');return;}
+  const entry={
+    id:editId||uid(),
+    vehicleId,date,driver,
+    start:document.getElementById('dp-start').value,
+    end:document.getElementById('dp-end').value,
+    kmStart:document.getElementById('dp-km-start').value.trim(),
+    tours:document.getElementById('dp-tours').value.trim(),
+    notes:document.getElementById('dp-notes').value.trim(),
+  };
+  if(editId){
+    const idx=DB.dailyPlans.findIndex(x=>x.id===editId);
+    DB.dailyPlans[idx]=entry;
+    toast('Tageseinsatzplan aktualisiert.');
+  } else {
+    DB.dailyPlans.push(entry);
+    toast('Tageseinsatzplan gespeichert.');
+  }
+  saveData(DB);
+  closeDailyPlanModal();
+  renderDailyPlans();
+  if(currentView==='dashboard')renderDashboard();
+});
+
+window.deleteDailyPlan=function(id){
+  if(!confirm('Diesen Plan wirklich löschen?'))return;
+  DB.dailyPlans=DB.dailyPlans.filter(x=>x.id!==id);
+  saveData(DB);
+  toast('Plan gelöscht.');
+  renderDailyPlans();
+  if(currentView==='dashboard')renderDashboard();
+};
+
+document.getElementById('new-dailyplan-btn').addEventListener('click',()=>openDailyPlanModal(null));
+document.getElementById('dp-search').addEventListener('input',e=>{dpFilterSearch=e.target.value;renderDailyPlans()});
+document.getElementById('dp-filter-date').addEventListener('change',e=>{dpFilterDate=e.target.value;renderDailyPlans()});
+document.getElementById('dp-filter-vehicle').addEventListener('change',e=>{dpFilterVehicle=e.target.value;renderDailyPlans()});
+document.getElementById('dp-clear-filters').addEventListener('click',()=>{
+  dpFilterSearch='';dpFilterDate='';dpFilterVehicle='';
+  document.getElementById('dp-search').value='';
+  document.getElementById('dp-filter-date').value='';
+  document.getElementById('dp-filter-vehicle').value='';
+  renderDailyPlans();
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   E-CHECK MODULE
+   ═════════════════════════════════════════════════════════════== */
+
+const ECHECK_ITEMS=[
+  {section:'Beleuchtung',items:['Scheinwerfer vorne','Rücklichter','Bremslicht','Blinker links/rechts','Warnblinkanlage','Innenbeleuchtung']},
+  {section:'Fahrzeugäußeres',items:['Reifenzustand vorne','Reifenzustand hinten','Reifendruck geprüft','Spiegel unbeschädigt','Scheiben unbeschädigt','Karosserie ohne neue Schäden']},
+  {section:'Technik & Sicherheit',items:['Motoröl geprüft','Kühlwasser geprüft','Scheibenwischer funktionsfähig','Hupe funktionsfähig','Warndreieck vorhanden','Verbandskasten vorhanden','Warnweste vorhanden','Feuerlöscher vorhanden']},
+  {section:'Innenraum',items:['Sicherheitsgurte funktionsfähig','Sitze korrekt eingestellt','Spiegel korrekt eingestellt','Klimaanlage/Heizung funktionsfähig','Radio/Kommunikation funktionsfähig']},
+];
+
+function buildECheckGrid(checkedMap){
+  const grid=document.getElementById('ec-checklist-grid');
+  grid.innerHTML='';
+  ECHECK_ITEMS.forEach(group=>{
+    const header=document.createElement('div');
+    header.className='echeck-section-title';
+    header.textContent=group.section;
+    grid.appendChild(header);
+    group.items.forEach(item=>{
+      const id='ec-item-'+item.replace(/\s+/g,'-').replace(/[^a-zA-Z0-9-]/g,'');
+      const div=document.createElement('div');
+      div.className='echeck-item';
+      div.innerHTML=`<input type="checkbox" id="${id}"${checkedMap&&checkedMap[item]?' checked':''}><label for="${id}">${esc(item)}</label>`;
+      grid.appendChild(div);
+    });
+  });
+}
+
+function getECheckValues(){
+  const result={};
+  ECHECK_ITEMS.forEach(g=>g.items.forEach(item=>{
+    const id='ec-item-'+item.replace(/\s+/g,'-').replace(/[^a-zA-Z0-9-]/g,'');
+    const el=document.getElementById(id);
+    if(el)result[item]=el.checked;
+  }));
+  return result;
+}
+
+function echeckResult(checks){
+  if(!checks)return'pending';
+  const allItems=ECHECK_ITEMS.flatMap(g=>g.items);
+  const total=allItems.length;
+  const checked=allItems.filter(i=>checks[i]).length;
+  if(checked===total)return'ok';
+  if(checked===0)return'pending';
+  return'fail';
+}
+function echeckResultBadge(r){
+  const map={ok:`<span class="badge badge-echeck-ok">Bestanden</span>`,fail:`<span class="badge badge-echeck-fail">Mängel</span>`,pending:`<span class="badge badge-echeck-pending">Offen</span>`};
+  return map[r]||map.pending;
+}
+
+let ecFilterSearch='', ecFilterVehicle='', ecFilterResult='';
+
+function renderEChecks(){
+  const vSel=document.getElementById('ec-filter-vehicle');
+  const prevV=vSel.value;
+  vSel.innerHTML=`<option value="">Alle Fahrzeuge</option>`+DB.vehicles.map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+  if(prevV)vSel.value=prevV;
+
+  let list=[...(DB.echecks||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  if(ecFilterSearch){
+    const q=ecFilterSearch.toLowerCase();
+    list=list.filter(e=>[e.inspector,e.notes].some(f=>(f||'').toLowerCase().includes(q))||
+      (DB.vehicles.find(v=>v.id===e.vehicleId)?.name||'').toLowerCase().includes(q));
+  }
+  if(ecFilterVehicle)list=list.filter(e=>e.vehicleId===ecFilterVehicle);
+  if(ecFilterResult)list=list.filter(e=>echeckResult(e.checks)===ecFilterResult);
+
+  const container=document.getElementById('echecks-container');
+  if(list.length===0){
+    container.innerHTML=`<div class="empty" style="padding:60px 0">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <span>Keine E-Checks gefunden</span></div>`;
+    return;
+  }
+  const allItems=ECHECK_ITEMS.flatMap(g=>g.items);
+  container.innerHTML=`<div style="display:flex;flex-direction:column;gap:10px">`+list.map(e=>{
+    const v=DB.vehicles.find(x=>x.id===e.vehicleId);
+    const res=echeckResult(e.checks);
+    const total=allItems.length;
+    const checked=allItems.filter(i=>e.checks&&e.checks[i]).length;
+    return`<div class="handover-card">
+      <div class="handover-card-header" onclick="toggleECheckCard('${e.id}')">
+        <div style="flex:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          ${echeckResultBadge(res)}
+          <strong style="font-size:.9rem">${fmtDate(e.date)}</strong>
+          <span onclick="event.stopPropagation();navigate('detail','${e.vehicleId}')" style="font-size:.82rem;color:var(--primary);cursor:pointer;font-weight:600">${esc(v?.name||'?')} (${esc(v?.plate||'?')})</span>
+          <span style="font-size:.82rem;color:var(--muted)">Prüfer: ${esc(e.inspector)}</span>
+          <span style="font-size:.75rem;color:var(--muted2)">${checked}/${total} Punkte</span>
+          ${e.km?`<span style="font-size:.75rem;color:var(--muted2)">${Number(e.km).toLocaleString('de-DE')} km</span>`:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openECheckModal('${e.id}')">✏</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deleteECheck('${e.id}')">✕</button>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();printECheck('${e.id}')">🖨</button>
+        </div>
+      </div>
+      <div class="handover-card-body" id="ecb-${e.id}">
+        <div class="handover-info-grid" style="margin-bottom:14px">
+          <div class="handover-info-item"><label>Datum</label><span>${fmtDate(e.date)}</span></div>
+          <div class="handover-info-item"><label>Prüfer</label><span>${esc(e.inspector)}</span></div>
+          ${e.km?`<div class="handover-info-item"><label>Km-Stand</label><span>${Number(e.km).toLocaleString('de-DE')} km</span></div>`:''}
+          <div class="handover-info-item"><label>Ergebnis</label><span>${echeckResultBadge(res)}</span></div>
+        </div>
+        ${ECHECK_ITEMS.map(g=>`
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted2);margin-bottom:6px;margin-top:10px">${esc(g.section)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px">${g.items.map(item=>{
+            const ok=e.checks&&e.checks[item];
+            return`<span style="display:inline-flex;align-items:center;gap:4px;font-size:.78rem;padding:3px 9px;border-radius:99px;${ok?'background:rgba(34,197,94,.1);color:#4ade80':'background:rgba(239,68,68,.08);color:#fca5a5'}">
+              ${ok?'✓':'✕'} ${esc(item)}</span>`;
+          }).join('')}</div>`).join('')}
+        ${e.notes?`<div style="margin-top:12px;font-size:.82rem;color:var(--muted);border-top:1px solid var(--border);padding-top:10px"><strong>Bemerkungen:</strong> ${esc(e.notes)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+window.toggleECheckCard=function(id){
+  const el=document.getElementById('ecb-'+id);
+  if(el)el.classList.toggle('open');
+};
+
+function openECheckModal(editId){
+  const editObj=editId?DB.echecks.find(x=>x.id===editId):null;
+  document.getElementById('ec-modal-title').textContent=editId?'E-Check bearbeiten':'E-Check durchführen';
+  document.getElementById('ec-id').value=editId||'';
+
+  const vSel=document.getElementById('ec-vehicle-sel');
+  vSel.innerHTML=DB.vehicles.map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+
+  if(editObj){
+    vSel.value=editObj.vehicleId;
+    document.getElementById('ec-date').value=editObj.date||'';
+    document.getElementById('ec-inspector').value=editObj.inspector||'';
+    document.getElementById('ec-km').value=editObj.km||'';
+    document.getElementById('ec-notes').value=editObj.notes||'';
+    buildECheckGrid(editObj.checks||{});
+  } else {
+    document.getElementById('ec-date').value=new Date().toISOString().slice(0,10);
+    document.getElementById('ec-inspector').value='';
+    document.getElementById('ec-km').value='';
+    document.getElementById('ec-notes').value='';
+    buildECheckGrid(null);
+  }
+  document.getElementById('echeck-modal').classList.add('open');
+}
+window.openECheckModal=openECheckModal;
+
+function closeECheckModal(){document.getElementById('echeck-modal').classList.remove('open')}
+document.getElementById('ec-modal-close').addEventListener('click',closeECheckModal);
+document.getElementById('ec-modal-cancel').addEventListener('click',closeECheckModal);
+document.getElementById('echeck-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeECheckModal()});
+
+document.getElementById('ec-modal-save').addEventListener('click',()=>{
+  const editId=document.getElementById('ec-id').value;
+  const vehicleId=document.getElementById('ec-vehicle-sel').value;
+  const date=document.getElementById('ec-date').value;
+  const inspector=document.getElementById('ec-inspector').value.trim();
+  if(!vehicleId||!date||!inspector){toast('Bitte Datum, Fahrzeug und Prüfer ausfüllen.','error');return;}
+  const entry={
+    id:editId||uid(),
+    vehicleId,date,inspector,
+    km:document.getElementById('ec-km').value.trim(),
+    notes:document.getElementById('ec-notes').value.trim(),
+    checks:getECheckValues(),
+  };
+  if(editId){
+    const idx=DB.echecks.findIndex(x=>x.id===editId);
+    DB.echecks[idx]=entry;
+    toast('E-Check aktualisiert.');
+  } else {
+    DB.echecks.push(entry);
+    toast('E-Check gespeichert.');
+  }
+  saveData(DB);
+  closeECheckModal();
+  renderEChecks();
+  if(currentView==='dashboard')renderDashboard();
+});
+
+window.deleteECheck=function(id){
+  if(!confirm('Diesen E-Check wirklich löschen?'))return;
+  DB.echecks=DB.echecks.filter(x=>x.id!==id);
+  saveData(DB);
+  toast('E-Check gelöscht.');
+  renderEChecks();
+  if(currentView==='dashboard')renderDashboard();
+};
+
+window.printECheck=function(id){
+  const e=DB.echecks.find(x=>x.id===id);
+  if(!e)return;
+  const v=DB.vehicles.find(x=>x.id===e.vehicleId);
+  const allItems=ECHECK_ITEMS.flatMap(g=>g.items);
+  const total=allItems.length;
+  const checked=allItems.filter(i=>e.checks&&e.checks[i]).length;
+  const res=echeckResult(e.checks);
+  const resLabel={ok:'Bestanden ✓',fail:'Mängel ✕',pending:'Offen'}[res];
+  const sectionsHtml=ECHECK_ITEMS.map(g=>`
+    <h3 style="margin:18px 0 6px;font-size:.9rem;color:#444;border-bottom:1px solid #eee;padding-bottom:4px">${escPrint(g.section)}</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 20px">${g.items.map(item=>{
+      const ok=e.checks&&e.checks[item];
+      return`<div style="display:flex;align-items:center;gap:6px;font-size:.85rem">
+        <span style="color:${ok?'#16a34a':'#dc2626'};font-weight:700">${ok?'✓':'✕'}</span>
+        ${escPrint(item)}</div>`;
+    }).join('')}</div>`).join('');
+  const w=window.open('','_blank','width=800,height=700');
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>E-Check</title>
+  <style>body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:780px;margin:0 auto}
+  h1{font-size:1.3rem;margin-bottom:4px}h2{font-size:1rem;color:#555;margin-top:20px;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:4px}
+  .result-ok{color:#16a34a;font-weight:700}.result-fail{color:#dc2626;font-weight:700}.result-pending{color:#d97706;font-weight:700}
+  @media print{button{display:none}}</style></head><body>
+  <h1>E-Check – Fahrzeugprüfung</h1>
+  <p style="color:#555;font-size:.85rem">MoonStar Fleet · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+  <h2>Fahrzeug & Prüfdaten</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:12px">
+    <div><b>Fahrzeug:</b> ${escPrint(v?.name||'—')}</div>
+    <div><b>Kennzeichen:</b> ${escPrint(v?.plate||'—')}</div>
+    <div><b>Datum:</b> ${escPrint(fmtDate(e.date))}</div>
+    <div><b>Prüfer:</b> ${escPrint(e.inspector)}</div>
+    ${e.km?`<div><b>Km-Stand:</b> ${Number(e.km).toLocaleString('de-DE')} km</div>`:''}
+    <div><b>Ergebnis:</b> <span class="result-${res}">${escPrint(resLabel)}</span></div>
+    <div><b>Punkte:</b> ${checked}/${total}</div>
+  </div>
+  ${sectionsHtml}
+  ${e.notes?`<h2>Bemerkungen / Mängel</h2><p>${escPrint(e.notes)}</p>`:''}
+  <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
+    <div><div style="border-top:1px solid #999;padding-top:6px;font-size:.78rem;color:#666">Prüfer: ${escPrint(e.inspector)}</div></div>
+    <div><div style="border-top:1px solid #999;padding-top:6px;font-size:.78rem;color:#666">Datum: ${escPrint(fmtDate(e.date))}</div></div>
+  </div>
+  <script>window.onload=()=>window.print()<\/script>
+  </body></html>`);
+  w.document.close();
+};
+
+document.getElementById('new-echeck-btn').addEventListener('click',()=>openECheckModal(null));
+document.getElementById('ec-search').addEventListener('input',e=>{ecFilterSearch=e.target.value;renderEChecks()});
+document.getElementById('ec-filter-vehicle').addEventListener('change',e=>{ecFilterVehicle=e.target.value;renderEChecks()});
+document.getElementById('ec-filter-result').addEventListener('change',e=>{ecFilterResult=e.target.value;renderEChecks()});
+document.getElementById('ec-clear-filters').addEventListener('click',()=>{
+  ecFilterSearch='';ecFilterVehicle='';ecFilterResult='';
+  document.getElementById('ec-search').value='';
+  document.getElementById('ec-filter-vehicle').value='';
+  document.getElementById('ec-filter-result').value='';
+  renderEChecks();
+});
 
 /* ─── Init ────────────────────────────────────────────────────── */
 initDB();

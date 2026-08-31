@@ -1243,7 +1243,17 @@ function entryStatusBadge(s){
 function loadData(){
   try{return JSON.parse(localStorage.getItem(SK)||'null')}catch{return null}
 }
-function saveData(data){localStorage.setItem(SK,JSON.stringify(data))}
+function saveData(data){
+  try{localStorage.setItem(SK,JSON.stringify(data));}
+  catch(e){
+    if(e.name==='QuotaExceededError'||e.code===22||e.code===1014){
+      toast('Speicher voll! Bitte einige Fotos entfernen oder Daten exportieren und dann löschen.','error');
+    } else {
+      toast('Fehler beim Speichern: '+e.message,'error');
+    }
+    throw e; // re-throw so callers can detect failure
+  }
+}
 
 let DB;
 
@@ -1858,9 +1868,11 @@ document.getElementById('modal-save').addEventListener('click',async()=>{
     const existing=DB.vehicles.find(x=>x.id===existingId);
     photo=existing?.photo||'';
   }
-  if(fileInput.files[0]){
-    photo=await fileToDataUrl(fileInput.files[0]);
-  }
+  try{
+    if(fileInput.files[0]){
+      photo=await fileToDataUrl(fileInput.files[0]);
+    }
+  }catch(e){toast('Foto konnte nicht geladen werden: '+e.message,'error');return;}
 
   const entry={
     id:existingId||uid(),
@@ -1875,15 +1887,22 @@ document.getElementById('modal-save').addEventListener('click',async()=>{
     photo,
   };
 
-  if(existingId){
-    const idx=DB.vehicles.findIndex(x=>x.id===existingId);
-    DB.vehicles[idx]=entry;
-    toast('Fahrzeug aktualisiert.');
-  } else {
-    DB.vehicles.unshift(entry);
-    toast('Fahrzeug hinzugefügt.');
+  try{
+    if(existingId){
+      const idx=DB.vehicles.findIndex(x=>x.id===existingId);
+      DB.vehicles[idx]=entry;
+      saveData(DB);
+      toast('Fahrzeug aktualisiert.');
+    } else {
+      DB.vehicles.unshift(entry);
+      saveData(DB);
+      toast('Fahrzeug hinzugefügt.');
+    }
+  }catch(e){
+    // saveData already showed the toast; revert in-memory change
+    if(!existingId)DB.vehicles.shift();
+    return;
   }
-  saveData(DB);
   closeVehicleModal();
   if(currentView==='vehicles')renderVehicles();
   if(currentView==='dashboard')renderDashboard();
@@ -2032,15 +2051,25 @@ document.getElementById('entry-modal-save').addEventListener('click',()=>{
     entry[f.key]=val;
   }
 
-  if(editId){
-    const idx=DB[type].findIndex(x=>x.id===editId);
-    DB[type][idx]=entry;
-    toast('Eintrag aktualisiert.');
-  } else {
-    DB[type].push(entry);
-    toast('Eintrag gespeichert.');
+  let prevEntry=null;
+  try{
+    if(editId){
+      const idx=DB[type].findIndex(x=>x.id===editId);
+      prevEntry=DB[type][idx];
+      DB[type][idx]=entry;
+      saveData(DB);
+      toast('Eintrag aktualisiert.');
+    } else {
+      DB[type].push(entry);
+      saveData(DB);
+      toast('Eintrag gespeichert.');
+    }
+  }catch(e){
+    // revert in-memory change
+    if(editId&&prevEntry){const idx=DB[type].findIndex(x=>x.id===editId);DB[type][idx]=prevEntry;}
+    else if(!editId)DB[type].pop();
+    return;
   }
-  saveData(DB);
   closeEntryModal();
   renderDetail(vehicleId);
 });
@@ -2384,15 +2413,24 @@ document.getElementById('hm-save').addEventListener('click',()=>{
     createdAt:editId?(DB.handovers.find(x=>x.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString(),
   };
 
-  if(editId){
-    const idx=DB.handovers.findIndex(x=>x.id===editId);
-    DB.handovers[idx]=entry;
-    toast('Protokoll aktualisiert.');
-  } else {
-    DB.handovers.push(entry);
-    toast('Übergabeprotokoll gespeichert.');
+  let prevHandover=null;
+  try{
+    if(editId){
+      const idx=DB.handovers.findIndex(x=>x.id===editId);
+      prevHandover=DB.handovers[idx];
+      DB.handovers[idx]=entry;
+      saveData(DB);
+      toast('Protokoll aktualisiert.');
+    } else {
+      DB.handovers.push(entry);
+      saveData(DB);
+      toast('Übergabeprotokoll gespeichert.');
+    }
+  }catch(e){
+    if(editId&&prevHandover){const idx=DB.handovers.findIndex(x=>x.id===editId);DB.handovers[idx]=prevHandover;}
+    else if(!editId)DB.handovers.pop();
+    return;
   }
-  saveData(DB);
   closeHandoverModal();
   if(currentView==='detail')renderDetail(vehicleId);
   else if(currentView==='handovers')renderHandoversList();
@@ -2569,15 +2607,24 @@ document.getElementById('dp-modal-save').addEventListener('click',()=>{
     tours:document.getElementById('dp-tours').value.trim(),
     notes:document.getElementById('dp-notes').value.trim(),
   };
-  if(editId){
-    const idx=DB.dailyPlans.findIndex(x=>x.id===editId);
-    DB.dailyPlans[idx]=entry;
-    toast('Tageseinsatzplan aktualisiert.');
-  } else {
-    DB.dailyPlans.push(entry);
-    toast('Tageseinsatzplan gespeichert.');
+  let prev=null;
+  try{
+    if(editId){
+      const idx=DB.dailyPlans.findIndex(x=>x.id===editId);
+      prev=DB.dailyPlans[idx];
+      DB.dailyPlans[idx]=entry;
+      saveData(DB);
+      toast('Tageseinsatzplan aktualisiert.');
+    } else {
+      DB.dailyPlans.push(entry);
+      saveData(DB);
+      toast('Tageseinsatzplan gespeichert.');
+    }
+  }catch(e){
+    if(editId&&prev){const idx=DB.dailyPlans.findIndex(x=>x.id===editId);DB.dailyPlans[idx]=prev;}
+    else if(!editId)DB.dailyPlans.pop();
+    return;
   }
-  saveData(DB);
   closeDailyPlanModal();
   renderDailyPlans();
   if(currentView==='dashboard')renderDashboard();
@@ -2772,15 +2819,24 @@ document.getElementById('ec-modal-save').addEventListener('click',()=>{
     notes:document.getElementById('ec-notes').value.trim(),
     checks:getECheckValues(),
   };
-  if(editId){
-    const idx=DB.echecks.findIndex(x=>x.id===editId);
-    DB.echecks[idx]=entry;
-    toast('E-Check aktualisiert.');
-  } else {
-    DB.echecks.push(entry);
-    toast('E-Check gespeichert.');
+  let prev=null;
+  try{
+    if(editId){
+      const idx=DB.echecks.findIndex(x=>x.id===editId);
+      prev=DB.echecks[idx];
+      DB.echecks[idx]=entry;
+      saveData(DB);
+      toast('E-Check aktualisiert.');
+    } else {
+      DB.echecks.push(entry);
+      saveData(DB);
+      toast('E-Check gespeichert.');
+    }
+  }catch(e){
+    if(editId&&prev){const idx=DB.echecks.findIndex(x=>x.id===editId);DB.echecks[idx]=prev;}
+    else if(!editId)DB.echecks.pop();
+    return;
   }
-  saveData(DB);
   closeECheckModal();
   renderEChecks();
   if(currentView==='dashboard')renderDashboard();

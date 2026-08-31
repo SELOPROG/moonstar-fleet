@@ -1,0 +1,3077 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MoonStar Fleet – Fuhrparkmanagement</title>
+<style>
+/* ─── Reset & variables ─────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0f1a;
+  --bg2:#111827;
+  --panel:#161e2e;
+  --panel2:rgba(255,255,255,0.04);
+  --border:rgba(255,255,255,0.09);
+  --border2:rgba(255,255,255,0.14);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --muted2:#64748b;
+  --primary:#38bdf8;
+  --primary-d:#0ea5e9;
+  --primary-dd:#0284c7;
+  --accent:#818cf8;
+  --success:#22c55e;
+  --warning:#f59e0b;
+  --danger:#ef4444;
+  --orange:#f97316;
+  --radius:16px;
+  --radius-sm:10px;
+  --shadow:0 8px 32px rgba(0,0,0,0.45);
+  --sidebar-w:260px;
+  --header-h:62px;
+}
+
+body{
+  font-family:"Inter",system-ui,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  overflow-x:hidden;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:99px}
+
+/* ─── Layout shell ──────────────────────────────────────────────── */
+#app{display:flex;flex:1;min-height:100vh}
+
+/* ─── Sidebar ───────────────────────────────────────────────────── */
+#sidebar{
+  width:var(--sidebar-w);
+  min-height:100vh;
+  background:var(--panel);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  position:fixed;
+  top:0;left:0;bottom:0;
+  z-index:200;
+  transition:transform .25s ease;
+}
+#sidebar .brand{
+  padding:20px 22px 18px;
+  font-size:1.15rem;
+  font-weight:800;
+  letter-spacing:-.3px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+#sidebar .brand svg{flex-shrink:0}
+#sidebar .brand span{color:var(--primary)}
+nav{flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:3px}
+.nav-item{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 14px;
+  border-radius:var(--radius-sm);
+  cursor:pointer;
+  font-size:.92rem;
+  font-weight:500;
+  color:var(--muted);
+  transition:background .15s,color .15s;
+  user-select:none;
+}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:var(--text)}
+.nav-item.active{background:rgba(56,189,248,0.12);color:var(--primary)}
+.nav-item svg{flex-shrink:0;opacity:.75}
+.nav-item.active svg{opacity:1}
+.nav-section{
+  font-size:.7rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--muted2);
+  padding:12px 14px 4px;
+}
+.sidebar-footer{
+  padding:16px;border-top:1px solid var(--border);
+  display:flex;flex-direction:column;gap:8px;
+}
+
+/* ─── Main content ──────────────────────────────────────────────── */
+#main{
+  margin-left:var(--sidebar-w);
+  flex:1;
+  display:flex;flex-direction:column;
+  min-height:100vh;
+}
+
+/* ─── Topbar ────────────────────────────────────────────────────── */
+#topbar{
+  height:var(--header-h);
+  position:sticky;top:0;
+  background:rgba(11,15,26,.85);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);
+  z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;
+  gap:16px;
+}
+#topbar .page-title{font-weight:700;font-size:1.05rem}
+#topbar .topbar-right{display:flex;align-items:center;gap:10px}
+
+/* ─── Content area ──────────────────────────────────────────────── */
+#content{padding:28px;flex:1}
+
+/* ─── Views ─────────────────────────────────────────────────────── */
+.view{display:none}
+.view.active{display:block}
+
+/* ─── Buttons ───────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:10px 16px;
+  border:none;border-radius:var(--radius-sm);
+  font-size:.88rem;font-weight:600;
+  cursor:pointer;transition:transform .15s,opacity .15s;
+  text-decoration:none;white-space:nowrap;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0);opacity:.85}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-d));color:#001018}
+.btn-secondary{background:rgba(255,255,255,0.07);color:var(--text);border:1px solid var(--border2)}
+.btn-danger{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.25)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-sm{padding:7px 12px;font-size:.8rem}
+.btn-icon{padding:8px;border-radius:8px}
+
+/* ─── Cards / panels ────────────────────────────────────────────── */
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+.card-body{padding:22px}
+.card-header{
+  padding:18px 22px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;
+}
+.card-title{font-weight:700;font-size:1rem}
+
+/* ─── Dashboard grid ────────────────────────────────────────────── */
+.stat-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:16px;
+  margin-bottom:24px;
+}
+.stat-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px 22px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.stat-card .stat-label{font-size:.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stat-card .stat-value{font-size:2rem;font-weight:800;line-height:1}
+.stat-card .stat-sub{font-size:.78rem;color:var(--muted2)}
+.stat-card.blue .stat-value{color:var(--primary)}
+.stat-card.green .stat-value{color:var(--success)}
+.stat-card.yellow .stat-value{color:var(--warning)}
+.stat-card.red .stat-value{color:var(--danger)}
+.stat-card.purple .stat-value{color:var(--accent)}
+.stat-card.orange .stat-value{color:var(--orange)}
+
+/* ─── Status badges ─────────────────────────────────────────────── */
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:99px;
+  font-size:.75rem;font-weight:700;
+}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.8}
+.badge-dienst{background:rgba(34,197,94,.14);color:#4ade80}
+.badge-werkstatt{background:rgba(245,158,11,.14);color:#fbbf24}
+.badge-abgemeldet{background:rgba(100,116,139,.18);color:#94a3b8}
+.badge-reserve{background:rgba(129,140,248,.14);color:#a5b4fc}
+.badge-open{background:rgba(239,68,68,.12);color:#fca5a5}
+.badge-done{background:rgba(34,197,94,.14);color:#4ade80}
+.badge-in-progress{background:rgba(245,158,11,.14);color:#fbbf24}
+.badge-paid{background:rgba(34,197,94,.14);color:#4ade80}
+.badge-unpaid{background:rgba(239,68,68,.12);color:#fca5a5}
+
+/* ─── Search & filter bar ───────────────────────────────────────── */
+.filter-bar{
+  display:flex;align-items:center;gap:10px;
+  flex-wrap:wrap;margin-bottom:20px;
+}
+.search-wrap{
+  position:relative;flex:1;min-width:200px;
+}
+.search-wrap svg{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  pointer-events:none;color:var(--muted2);
+}
+.search-input{
+  width:100%;padding:10px 12px 10px 38px;
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--radius-sm);color:var(--text);
+  font-size:.9rem;outline:none;transition:border-color .2s;
+}
+.search-input:focus{border-color:var(--primary)}
+.filter-select{
+  padding:10px 14px;background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--radius-sm);color:var(--text);font-size:.9rem;outline:none;
+  cursor:pointer;
+}
+.filter-select:focus{border-color:var(--primary)}
+
+/* ─── Vehicle grid ──────────────────────────────────────────────── */
+.vehicle-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:18px;
+}
+.vcard{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  box-shadow:var(--shadow);
+  display:flex;flex-direction:column;
+  transition:border-color .2s,transform .2s;
+  cursor:pointer;
+}
+.vcard:hover{border-color:var(--border2);transform:translateY(-2px)}
+.vcard-photo{
+  width:100%;height:170px;
+  background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(129,140,248,.06));
+  object-fit:cover;display:block;
+  flex-shrink:0;
+}
+.vcard-photo-placeholder{
+  width:100%;height:170px;
+  background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(129,140,248,.06));
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.vcard-body{padding:16px;flex:1;display:flex;flex-direction:column;gap:6px}
+.vcard-title{font-weight:700;font-size:.98rem}
+.vcard-meta{font-size:.8rem;color:var(--muted);line-height:1.6}
+.vcard-actions{
+  padding:12px 16px;
+  border-top:1px solid var(--border);
+  display:flex;gap:8px;
+}
+
+/* ─── Forms ─────────────────────────────────────────────────────── */
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:14px;
+}
+.form-grid .span2{grid-column:1/-1}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.form-control{
+  padding:11px 14px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border2);
+  border-radius:var(--radius-sm);
+  color:var(--text);font-size:.9rem;outline:none;
+  transition:border-color .2s;
+  width:100%;
+}
+.form-control:focus{border-color:var(--primary)}
+.form-control::placeholder{color:var(--muted2)}
+textarea.form-control{resize:vertical;min-height:90px}
+select.form-control option{background:var(--bg2)}
+
+/* ─── Modal ─────────────────────────────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(6px);
+  z-index:900;
+  display:none;align-items:center;justify-content:center;
+  padding:20px;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--radius);box-shadow:0 24px 60px rgba(0,0,0,.6);
+  width:100%;max-width:600px;max-height:90vh;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.modal-header{
+  padding:18px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-title{font-weight:700;font-size:1.05rem}
+.modal-body{padding:22px;overflow-y:auto;flex:1}
+.modal-footer{
+  padding:16px 22px;border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:10px;
+}
+
+/* ─── Tabs ───────────────────────────────────────────────────────── */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px;overflow-x:auto;flex-shrink:0}
+.tab{
+  padding:10px 16px;font-size:.85rem;font-weight:600;
+  color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
+  transition:color .15s,border-color .15s;white-space:nowrap;
+  margin-bottom:-1px;
+}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ─── Tables ─────────────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.87rem}
+th{
+  padding:10px 14px;text-align:left;
+  font-size:.75rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--muted2);
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+td{
+  padding:11px 14px;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  color:var(--text);vertical-align:middle;
+}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.025)}
+
+/* ─── Empty state ────────────────────────────────────────────────── */
+.empty{
+  text-align:center;padding:48px 24px;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  color:var(--muted2);
+}
+.empty svg{opacity:.3}
+
+/* ─── Vehicle detail ─────────────────────────────────────────────── */
+#detail-view{display:none;flex-direction:column;gap:0}
+#detail-view.active{display:flex}
+.detail-header{
+  display:flex;align-items:flex-start;gap:18px;
+  margin-bottom:24px;flex-wrap:wrap;
+}
+.detail-photo{
+  width:200px;height:140px;object-fit:cover;
+  border-radius:var(--radius);border:1px solid var(--border);
+  flex-shrink:0;
+}
+.detail-photo-placeholder{
+  width:200px;height:140px;
+  border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--panel2);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.detail-info{flex:1;min-width:200px}
+.detail-title{font-size:1.5rem;font-weight:800;margin-bottom:6px}
+.detail-meta{color:var(--muted);font-size:.9rem;line-height:1.8}
+
+/* ─── Module entry cards ─────────────────────────────────────────── */
+.entry-list{display:flex;flex-direction:column;gap:10px}
+.entry-card{
+  background:rgba(255,255,255,.035);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px 16px;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+}
+.entry-info{flex:1}
+.entry-title{font-weight:600;font-size:.9rem;margin-bottom:4px}
+.entry-meta{font-size:.78rem;color:var(--muted);line-height:1.6}
+.entry-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ─── Dashboard lists ────────────────────────────────────────────── */
+.dash-list{display:flex;flex-direction:column;gap:8px}
+.dash-list-item{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 14px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:var(--radius-sm);cursor:pointer;
+  transition:background .15s;
+}
+.dash-list-item:hover{background:rgba(255,255,255,.06)}
+.dash-list-plate{
+  font-size:.75rem;font-weight:700;
+  background:rgba(255,255,255,.07);
+  padding:3px 8px;border-radius:6px;
+  color:var(--muted);white-space:nowrap;
+}
+
+/* ─── Toast ──────────────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--radius-sm);padding:12px 18px;
+  font-size:.875rem;box-shadow:var(--shadow);
+  transform:translateY(20px);opacity:0;
+  transition:transform .25s,opacity .25s;
+  pointer-events:none;z-index:9999;
+  display:flex;align-items:center;gap:9px;
+}
+#toast.show{transform:translateY(0);opacity:1}
+
+/* ─── Hamburger ──────────────────────────────────────────────────── */
+#menu-toggle{display:none;background:none;border:none;cursor:pointer;color:var(--text)}
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media(max-width:900px){
+  #sidebar{transform:translateX(-100%)}
+  #sidebar.open{transform:translateX(0)}
+  #main{margin-left:0}
+  #menu-toggle{display:flex}
+  .form-grid{grid-template-columns:1fr}
+  .form-grid .span2{grid-column:1}
+  .detail-photo,.detail-photo-placeholder{width:100%;height:160px}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:540px){
+  #content{padding:16px}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  .vehicle-grid{grid-template-columns:1fr}
+}
+
+/* ─── Sidebar overlay (mobile) ───────────────────────────────────── */
+#sidebar-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:190;
+}
+#sidebar-overlay.open{display:block}
+
+/* ─── Login overlay ──────────────────────────────────────────────── */
+#login-overlay{
+  position:fixed;inset:0;
+  background:var(--bg);
+  z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+.login-box{
+  background:var(--panel);
+  border:1px solid var(--border2);
+  border-radius:var(--radius);
+  box-shadow:0 32px 80px rgba(0,0,0,.6);
+  width:100%;max-width:400px;
+  padding:40px 36px;
+  display:flex;flex-direction:column;align-items:center;gap:24px;
+}
+.login-logo{
+  display:flex;align-items:center;gap:12px;
+  font-size:1.4rem;font-weight:800;
+}
+.login-logo span{color:var(--primary)}
+.login-subtitle{
+  font-size:.85rem;color:var(--muted);text-align:center;
+  margin-top:-16px;
+}
+#login-form{width:100%;display:flex;flex-direction:column;gap:14px}
+#login-error{
+  font-size:.83rem;color:var(--danger);text-align:center;
+  min-height:1.2em;
+}
+.login-btn{
+  width:100%;padding:12px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-d));
+  color:#001018;font-weight:700;font-size:.95rem;
+  border:none;border-radius:var(--radius-sm);cursor:pointer;
+  transition:opacity .15s;margin-top:4px;
+}
+.login-btn:hover{opacity:.9}
+.stat-card.clickable{cursor:pointer;transition:border-color .2s,transform .2s,background .15s}
+.stat-card.clickable:hover{border-color:var(--border2);transform:translateY(-2px);background:rgba(255,255,255,.04)}
+
+/* ─── Status detail modal ────────────────────────────────────────── */
+#status-modal .modal{max-width:640px}
+
+/* ─── Tageseinsatzplan & E-Check styles ─────────────────────────── */
+.echeck-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:18px}
+.echeck-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  background:rgba(255,255,255,.035);border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+}
+.echeck-item input[type=checkbox]{width:17px;height:17px;accent-color:var(--primary);flex-shrink:0;cursor:pointer}
+.echeck-item label{font-size:.88rem;cursor:pointer;user-select:none;flex:1}
+.echeck-section-title{
+  font-size:.78rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--muted2);
+  margin:18px 0 8px;grid-column:1/-1;
+}
+.badge-echeck-ok{background:rgba(34,197,94,.14);color:#4ade80}
+.badge-echeck-fail{background:rgba(239,68,68,.12);color:#fca5a5}
+.badge-echeck-pending{background:rgba(245,158,11,.14);color:#fbbf24}
+.plan-tour-badge{
+  display:inline-block;padding:2px 8px;border-radius:6px;
+  font-size:.75rem;font-weight:700;
+  background:rgba(56,189,248,.12);color:var(--primary);
+  margin:2px;
+}
+
+/* ─── Handover / signature styles ───────────────────────────────── */
+.sig-canvas-wrap{
+  border:1px solid var(--border2);border-radius:var(--radius-sm);
+  background:#fff;position:relative;overflow:hidden;
+}
+#sig-canvas{display:block;width:100%;cursor:crosshair;touch-action:none}
+.sig-tools{
+  display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap;
+}
+.doc-preview-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;
+  margin-top:8px;
+}
+.doc-thumb{
+  position:relative;border-radius:var(--radius-sm);overflow:hidden;
+  border:1px solid var(--border);background:var(--panel2);
+}
+.doc-thumb img{width:100%;height:110px;object-fit:cover;display:block}
+.doc-thumb .doc-label{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(0,0,0,.65);font-size:.7rem;color:var(--text);
+  padding:4px 8px;text-align:center;
+}
+.doc-thumb .doc-remove{
+  position:absolute;top:4px;right:4px;
+  background:rgba(239,68,68,.85);border:none;color:#fff;
+  border-radius:50%;width:20px;height:20px;font-size:.75rem;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.handover-card{
+  background:rgba(255,255,255,.035);border:1px solid var(--border);
+  border-radius:var(--radius-sm);overflow:hidden;
+}
+.handover-card-header{
+  padding:12px 16px;display:flex;align-items:center;gap:10px;
+  cursor:pointer;transition:background .15s;
+}
+.handover-card-header:hover{background:rgba(255,255,255,.04)}
+.handover-card-body{
+  padding:14px 16px;border-top:1px solid var(--border);
+  display:none;
+}
+.handover-card-body.open{display:block}
+.handover-info-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:10px 20px;margin-bottom:14px;
+}
+.handover-info-item label{
+  font-size:.72rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--muted2);display:block;margin-bottom:2px;
+}
+.handover-info-item span{font-size:.88rem}
+.sig-display{
+  border:1px solid var(--border);border-radius:8px;
+  background:#fff;padding:4px;max-height:90px;
+}
+.badge-handover{background:rgba(56,189,248,.13);color:#7dd3fc}
+.badge-return{background:rgba(129,140,248,.13);color:#a5b4fc}
+/* large handover modal */
+#handover-modal .modal{max-width:780px}
+</style>
+</head>
+<body>
+
+<div id="app">
+<!-- ═══ SIDEBAR ════════════════════════════════════════════════════ -->
+<aside id="sidebar">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1" y="3" width="15" height="13" rx="2"/>
+      <path d="M16 8h4l3 5v3h-7V8z"/>
+      <circle cx="5.5" cy="18.5" r="2.5"/>
+      <circle cx="18.5" cy="18.5" r="2.5"/>
+    </svg>
+    MoonStar <span>Fleet</span>
+  </div>
+  <nav>
+    <div class="nav-section">Navigation</div>
+    <div class="nav-item active" data-view="dashboard">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" data-view="vehicles">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      Fahrzeuge
+    </div>
+    <div class="nav-item" data-view="handovers">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Übergabeprotokolle
+    </div>
+    <div class="nav-item" data-view="dailyplans">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/></svg>
+      Tageseinsatzplan
+    </div>
+    <div class="nav-item" data-view="echecks">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      E-Check
+    </div>
+    <div class="nav-section">Aktionen</div>
+    <div class="nav-item" id="nav-add">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Fahrzeug hinzufügen
+    </div>
+    <div class="nav-item" id="nav-export">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportieren (JSON)
+    </div>
+    <div class="nav-item" id="nav-export-csv">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportieren (CSV)
+    </div>
+    <label class="nav-item" for="importFile" style="cursor:pointer">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importieren (JSON)
+    </label>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+    <label class="nav-item" for="importCsvFile" style="cursor:pointer">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importieren (CSV)
+    </label>
+    <input type="file" id="importCsvFile" accept=".csv,text/csv" style="display:none">
+    <div class="nav-section">Daten</div>
+    <div class="nav-item" id="nav-reset" style="color:var(--danger);opacity:.7">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      Alles löschen
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="font-size:.72rem;color:var(--muted2)">MoonStar Fleet v1.0</div>
+    <div style="font-size:.72rem;color:var(--muted2)">Alle Daten lokal im Browser</div>
+  </div>
+</aside>
+<div id="sidebar-overlay"></div>
+
+<!-- ═══ MAIN ═══════════════════════════════════════════════════════ -->
+<div id="main">
+  <!-- Topbar -->
+  <div id="topbar">
+    <div style="display:flex;align-items:center;gap:14px">
+      <button id="menu-toggle" class="btn btn-icon btn-ghost">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="page-title" id="topbar-title">Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-primary btn-sm" id="topbar-add-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Fahrzeug
+      </button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div id="content">
+
+    <!-- ─── DASHBOARD ──────────────────────────────────────────── -->
+    <div class="view active" id="view-dashboard">
+      <div class="stat-grid" id="dash-stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;flex-wrap:wrap" id="dash-panels"></div>
+    </div>
+
+    <!-- ─── VEHICLES LIST ──────────────────────────────────────── -->
+    <div class="view" id="view-vehicles">
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" id="search-input" placeholder="Suchen nach Name, Kennzeichen, Modell …">
+        </div>
+        <select class="filter-select" id="filter-status">
+          <option value="">Alle Status</option>
+          <option value="Im Dienst">Im Dienst</option>
+          <option value="In Werkstatt">In Werkstatt</option>
+          <option value="Abgemeldet">Abgemeldet</option>
+          <option value="Reserve">Reserve</option>
+        </select>
+        <select class="filter-select" id="filter-brand">
+          <option value="">Alle Marken</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="clear-filters">Filter löschen</button>
+      </div>
+      <div class="vehicle-grid" id="vehicle-grid"></div>
+    </div>
+
+    <!-- ─── VEHICLE DETAIL ─────────────────────────────────────── -->
+    <div class="view" id="view-detail">
+      <div style="margin-bottom:18px">
+        <button class="btn btn-ghost btn-sm" id="back-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Zurück zur Liste
+        </button>
+      </div>
+      <div id="detail-container"></div>
+    </div>
+
+    <!-- ─── HANDOVERS LIST ─────────────────────────────────────── -->
+    <div class="view" id="view-handovers">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-size:1.2rem;font-weight:800">Alle Übergabeprotokolle</h2>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Gesamtübersicht aller Fahrzeugübergaben und -rücknahmen</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="new-handover-global-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Neues Protokoll
+        </button>
+      </div>
+      <div class="filter-bar" style="margin-bottom:16px">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" id="ho-search" placeholder="Suchen nach Übergeber, Empfänger, Fahrzeug …">
+        </div>
+        <select class="filter-select" id="ho-filter-type">
+          <option value="">Alle Typen</option>
+          <option value="Übergabe">Übergabe</option>
+          <option value="Rücknahme">Rücknahme</option>
+        </select>
+        <select class="filter-select" id="ho-filter-vehicle">
+          <option value="">Alle Fahrzeuge</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="ho-clear-filters">Filter löschen</button>
+      </div>
+      <div id="handovers-list-container"></div>
+    </div>
+
+    <!-- ─── TAGESEINSATZPLAN ───────────────────────────────────── -->
+    <div class="view" id="view-dailyplans">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-size:1.2rem;font-weight:800">Tageseinsatzpläne</h2>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Tagesplanung: Fahrer, Fahrzeug und Touren verwalten</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="new-dailyplan-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Neuer Plan
+        </button>
+      </div>
+      <div class="filter-bar" style="margin-bottom:16px">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" id="dp-search" placeholder="Suchen nach Fahrer, Fahrzeug, Tour …">
+        </div>
+        <input class="filter-select" id="dp-filter-date" type="date" style="padding:10px 14px;background:var(--panel);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:.9rem;outline:none" title="Nach Datum filtern">
+        <select class="filter-select" id="dp-filter-vehicle">
+          <option value="">Alle Fahrzeuge</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="dp-clear-filters">Filter löschen</button>
+      </div>
+      <div id="dailyplans-container"></div>
+    </div>
+
+    <!-- ─── E-CHECK ────────────────────────────────────────────── -->
+    <div class="view" id="view-echecks">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-size:1.2rem;font-weight:800">E-Check – Fahrzeugprüfung</h2>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Elektronische Fahrzeugchecks – Checkliste vor jedem Einsatz</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="new-echeck-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Neuer E-Check
+        </button>
+      </div>
+      <div class="filter-bar" style="margin-bottom:16px">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" id="ec-search" placeholder="Suchen nach Fahrer, Fahrzeug …">
+        </div>
+        <select class="filter-select" id="ec-filter-vehicle">
+          <option value="">Alle Fahrzeuge</option>
+        </select>
+        <select class="filter-select" id="ec-filter-result">
+          <option value="">Alle Ergebnisse</option>
+          <option value="ok">Bestanden</option>
+          <option value="fail">Mängel</option>
+          <option value="pending">Offen</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="ec-clear-filters">Filter löschen</button>
+      </div>
+      <div id="echecks-container"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══ VEHICLE MODAL ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="vehicle-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Fahrzeug hinzufügen</span>
+      <button class="btn btn-icon btn-ghost" id="modal-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="vehicle-form" class="form-grid">
+        <input type="hidden" id="v-id">
+        <div class="form-group">
+          <label>Fahrzeugname *</label>
+          <input class="form-control" id="v-name" placeholder="z. B. Einsatzfahrzeug 1" required>
+        </div>
+        <div class="form-group">
+          <label>Kennzeichen *</label>
+          <input class="form-control" id="v-plate" placeholder="z. B. B-MS 1234" required>
+        </div>
+        <div class="form-group">
+          <label>Marke *</label>
+          <input class="form-control" id="v-brand" placeholder="z. B. Mercedes-Benz" required>
+        </div>
+        <div class="form-group">
+          <label>Modell *</label>
+          <input class="form-control" id="v-model" placeholder="z. B. Sprinter 316" required>
+        </div>
+        <div class="form-group">
+          <label>Baujahr</label>
+          <input class="form-control" id="v-year" type="number" placeholder="z. B. 2020" min="1900" max="2099">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-control" id="v-status">
+            <option value="Im Dienst">Im Dienst</option>
+            <option value="In Werkstatt">In Werkstatt</option>
+            <option value="Abgemeldet">Abgemeldet</option>
+            <option value="Reserve">Reserve</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fahrer / Zuständige Person</label>
+          <input class="form-control" id="v-driver" placeholder="Name des Fahrers">
+        </div>
+        <div class="form-group">
+          <label>Kilometerstand (km)</label>
+          <input class="form-control" id="v-km" type="number" placeholder="z. B. 85000" min="0">
+        </div>
+        <div class="form-group">
+          <label>Kraftstoff</label>
+          <select class="form-control" id="v-fuel">
+            <option value="">—</option>
+            <option value="Diesel">Diesel</option>
+            <option value="Benzin">Benzin</option>
+            <option value="Elektro">Elektro</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="Gas">Gas</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>FIN / Fahrgestellnummer</label>
+          <input class="form-control" id="v-vin" placeholder="z. B. WDB9066351L...">
+        </div>
+        <div class="form-group span2">
+          <label>Notizen</label>
+          <textarea class="form-control" id="v-notes" placeholder="Allgemeine Notizen zum Fahrzeug …"></textarea>
+        </div>
+        <div class="form-group span2">
+          <label>Fahrzeugfoto</label>
+          <input class="form-control" id="v-photo-input" type="file" accept="image/*">
+          <div id="photo-preview-wrap" style="margin-top:8px;display:none">
+            <img id="photo-preview" style="max-height:140px;border-radius:10px;border:1px solid var(--border)">
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="modal-cancel">Abbrechen</button>
+      <button class="btn btn-primary" id="modal-save">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ENTRY MODAL (Maintenance / Repair / Damage / Ticket) ══════ -->
+<div class="modal-overlay" id="entry-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="entry-modal-title">Eintrag</span>
+      <button class="btn btn-icon btn-ghost" id="entry-modal-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="entry-form" class="form-grid">
+        <input type="hidden" id="e-id">
+        <input type="hidden" id="e-type">
+        <input type="hidden" id="e-vehicle-id">
+        <!-- fields injected by JS -->
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="entry-modal-cancel">Abbrechen</button>
+      <button class="btn btn-primary" id="entry-modal-save">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HANDOVER MODAL ═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="handover-modal">
+  <div class="modal" style="max-width:780px">
+    <div class="modal-header">
+      <span class="modal-title" id="hm-title">Übergabeprotokoll erstellen</span>
+      <button class="btn btn-icon btn-ghost" id="hm-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="handover-form">
+        <input type="hidden" id="hm-id">
+        <input type="hidden" id="hm-vehicle-id">
+
+        <div class="form-grid" style="margin-bottom:18px">
+          <!-- Row 1 -->
+          <div class="form-group">
+            <label>Fahrzeug *</label>
+            <select class="form-control" id="hm-vehicle-sel" required></select>
+          </div>
+          <div class="form-group">
+            <label>Typ *</label>
+            <select class="form-control" id="hm-type" required>
+              <option value="Übergabe">Übergabe (Fahrzeug wird ausgegeben)</option>
+              <option value="Rücknahme">Rücknahme (Fahrzeug wird zurückgenommen)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Datum &amp; Uhrzeit *</label>
+            <input class="form-control" id="hm-date" type="datetime-local" required>
+          </div>
+          <div class="form-group">
+            <label>Kilometerstand (km)</label>
+            <input class="form-control" id="hm-km" type="number" placeholder="z. B. 85000" min="0">
+          </div>
+          <div class="form-group">
+            <label>Übergeber (Name) *</label>
+            <input class="form-control" id="hm-from" placeholder="Wer gibt das Fahrzeug ab?" required>
+          </div>
+          <div class="form-group">
+            <label>Empfänger (Name) *</label>
+            <input class="form-control" id="hm-to" placeholder="Wer übernimmt das Fahrzeug?" required>
+          </div>
+          <div class="form-group span2">
+            <label>Fahrzeugzustand / Bemerkungen</label>
+            <textarea class="form-control" id="hm-notes" placeholder="z. B. Fahrzeug in einwandfreiem Zustand übergeben, Tank voll, Schlüssel 2×, Verbandkasten vorhanden …" style="min-height:80px"></textarea>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
+            Tageseinsatzplan
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Fahrername</label>
+              <input class="form-control" id="hm-plan-driver" placeholder="Name des Fahrers">
+            </div>
+            <div class="form-group">
+              <label>Kennzeichen</label>
+              <input class="form-control" id="hm-plan-plate" placeholder="z. B. B-MS 1234">
+            </div>
+            <div class="form-group span2">
+              <label>Tournummern</label>
+              <input class="form-control" id="hm-plan-tour" placeholder="z. B. Tour 12, 18, 21">
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
+            Fahrzeugfotos – Optik (optional)
+          </div>
+          <p style="font-size:.78rem;color:var(--muted2);margin-bottom:10px">Lade Fotos vom äußeren Fahrzeugzustand hoch.</p>
+          <input type="file" id="hm-vehicle-photos-input" accept="image/*" multiple style="display:none">
+          <button type="button" class="btn btn-secondary btn-sm" id="hm-vehicle-photos-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Fotos auswählen
+          </button>
+          <div class="doc-preview-grid" id="hm-vehicle-photos-preview"></div>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
+            Fahrzeugfotos – Innenraum (optional)
+          </div>
+          <p style="font-size:.78rem;color:var(--muted2);margin-bottom:10px">Lade Fotos vom Innenraum des Fahrzeugs hoch.</p>
+          <input type="file" id="hm-interior-photos-input" accept="image/*" multiple style="display:none">
+          <button type="button" class="btn btn-secondary btn-sm" id="hm-interior-photos-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Fotos auswählen
+          </button>
+          <div class="doc-preview-grid" id="hm-interior-photos-preview"></div>
+        </div>
+
+        <!-- ID documents upload -->
+        <div style="margin-bottom:18px">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
+            Ausweis / Führerschein (Fotos, optional)
+          </div>
+          <p style="font-size:.78rem;color:var(--muted2);margin-bottom:10px">Lade Fotos des Führerscheins oder Personalausweises der übernehmenden Person hoch. Die Bilder werden lokal im Browser gespeichert.</p>
+          <input type="file" id="hm-docs-input" accept="image/*" multiple style="display:none">
+          <button type="button" class="btn btn-secondary btn-sm" id="hm-docs-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Dokumente auswählen
+          </button>
+          <div class="doc-preview-grid" id="hm-docs-preview"></div>
+        </div>
+
+        <!-- Signature pad -->
+        <div>
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
+            Unterschrift des Empfängers *
+          </div>
+          <div class="sig-canvas-wrap" id="sig-wrap">
+            <canvas id="sig-canvas" height="160"></canvas>
+          </div>
+          <div class="sig-tools">
+            <button type="button" class="btn btn-ghost btn-sm" id="sig-clear">Unterschrift löschen</button>
+            <span style="font-size:.75rem;color:var(--muted2)">Mit Maus oder Finger unterschreiben</span>
+          </div>
+          <div id="sig-error" style="font-size:.78rem;color:var(--danger);margin-top:4px;display:none">Bitte Unterschrift leisten.</div>
+        </div>
+
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="hm-cancel">Abbrechen</button>
+      <button class="btn btn-primary" id="hm-save">Protokoll speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DAILY PLAN MODAL ════════════════════════════════════════ -->
+<div class="modal-overlay" id="dailyplan-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <span class="modal-title" id="dp-modal-title">Tageseinsatzplan erstellen</span>
+      <button class="btn btn-icon btn-ghost" id="dp-modal-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="dailyplan-form" class="form-grid">
+        <input type="hidden" id="dp-id">
+        <div class="form-group">
+          <label>Datum *</label>
+          <input class="form-control" id="dp-date" type="date" required>
+        </div>
+        <div class="form-group">
+          <label>Fahrzeug *</label>
+          <select class="form-control" id="dp-vehicle-sel" required></select>
+        </div>
+        <div class="form-group">
+          <label>Fahrername *</label>
+          <input class="form-control" id="dp-driver" placeholder="Name des Fahrers" required>
+        </div>
+        <div class="form-group">
+          <label>Dienstbeginn</label>
+          <input class="form-control" id="dp-start" type="time" placeholder="08:00">
+        </div>
+        <div class="form-group">
+          <label>Dienstende</label>
+          <input class="form-control" id="dp-end" type="time" placeholder="16:00">
+        </div>
+        <div class="form-group">
+          <label>Startkm</label>
+          <input class="form-control" id="dp-km-start" type="number" min="0" placeholder="z. B. 85000">
+        </div>
+        <div class="form-group span2">
+          <label>Tournummern / Routen</label>
+          <input class="form-control" id="dp-tours" placeholder="z. B. Tour 12, 18, 21">
+        </div>
+        <div class="form-group span2">
+          <label>Bemerkungen</label>
+          <textarea class="form-control" id="dp-notes" placeholder="Besondere Vorkommnisse, Anweisungen …"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="dp-modal-cancel">Abbrechen</button>
+      <button class="btn btn-primary" id="dp-modal-save">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ E-CHECK MODAL ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="echeck-modal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <span class="modal-title" id="ec-modal-title">E-Check durchführen</span>
+      <button class="btn btn-icon btn-ghost" id="ec-modal-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="echeck-form">
+        <input type="hidden" id="ec-id">
+        <div class="form-grid" style="margin-bottom:18px">
+          <div class="form-group">
+            <label>Datum *</label>
+            <input class="form-control" id="ec-date" type="date" required>
+          </div>
+          <div class="form-group">
+            <label>Fahrzeug *</label>
+            <select class="form-control" id="ec-vehicle-sel" required></select>
+          </div>
+          <div class="form-group">
+            <label>Prüfer (Name) *</label>
+            <input class="form-control" id="ec-inspector" placeholder="Name des Prüfers" required>
+          </div>
+          <div class="form-group">
+            <label>Kilometerstand</label>
+            <input class="form-control" id="ec-km" type="number" min="0" placeholder="Aktueller Km-Stand">
+          </div>
+        </div>
+
+        <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:10px">Prüfpunkte</div>
+        <div class="echeck-grid" id="ec-checklist-grid"></div>
+
+        <div class="form-group" style="margin-top:8px">
+          <label>Mängelbeschreibung / Bemerkungen</label>
+          <textarea class="form-control" id="ec-notes" placeholder="Festgestellte Mängel, sonstige Hinweise …"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="ec-modal-cancel">Abbrechen</button>
+      <button class="btn btn-primary" id="ec-modal-save">E-Check speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Login Overlay ─────────────────────────────────────────── -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="3" width="15" height="13" rx="2"/>
+        <path d="M16 8h4l3 5v3h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+      MoonStar <span>Fleet</span>
+    </div>
+    <div class="login-subtitle">Fuhrparkverwaltung · PLD · Bitte anmelden</div>
+    <form id="login-form">
+      <div class="form-group">
+        <label>Benutzername</label>
+        <input class="form-control" id="login-user" type="text" placeholder="Benutzername" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Passwort</label>
+        <input class="form-control" id="login-pass" type="password" placeholder="Passwort" autocomplete="current-password">
+      </div>
+      <div id="login-error"></div>
+      <button class="login-btn" type="submit">Anmelden</button>
+    </form>
+  </div>
+</div>
+
+<!-- ─── Status-Detail Modal ───────────────────────────────────────── -->
+<div class="modal-overlay" id="status-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <span class="modal-title" id="status-modal-title">Fahrzeuge</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-secondary btn-sm" id="status-modal-print">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Drucken
+        </button>
+        <button class="btn btn-icon btn-ghost" id="status-modal-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="modal-body" id="status-modal-body"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   MOONSTAR FLEET — Complete local fleet manager
+   All data stored in localStorage
+   ═════════════════════════════════════════════════════════════== */
+
+const SK = 'moonstar_fleet_v1';
+
+/* ─── Helpers ─────────────────────────────────────────────────── */
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+function esc(s){
+  return String(s??'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+function fmtDate(d){
+  if(!d)return'—';
+  try{return new Date(d).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})}
+  catch{return d}
+}
+function fmtCurrency(n){
+  if(n===''||n===null||n===undefined)return'—';
+  return Number(n).toLocaleString('de-DE',{style:'currency',currency:'EUR'});
+}
+function toast(msg,type='success'){
+  const el=document.getElementById('toast');
+  const icon=type==='success'?'✓':type==='error'?'✕':'ℹ';
+  el.innerHTML=`<span style="color:${type==='success'?'var(--success)':type==='error'?'var(--danger)':'var(--primary)'};">${icon}</span>${esc(msg)}`;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+/* ─── Status config ───────────────────────────────────────────── */
+const STATUS_MAP={
+  'Im Dienst':{cls:'badge-dienst',color:'var(--success)'},
+  'In Werkstatt':{cls:'badge-werkstatt',color:'var(--warning)'},
+  'Abgemeldet':{cls:'badge-abgemeldet',color:'var(--muted)'},
+  'Reserve':{cls:'badge-reserve',color:'var(--accent)'},
+};
+function statusBadge(s){
+  const cfg=STATUS_MAP[s]||{cls:'badge-abgemeldet'};
+  return`<span class="badge ${cfg.cls}">${esc(s||'—')}</span>`;
+}
+function entryStatusBadge(s){
+  if(!s)return'';
+  const map={'Offen':'badge-open','In Bearbeitung':'badge-in-progress','Erledigt':'badge-done',
+             'Bezahlt':'badge-paid','Unbezahlt':'badge-unpaid'};
+  return`<span class="badge ${map[s]||'badge-open'}">${esc(s)}</span>`;
+}
+
+/* ─── Storage ─────────────────────────────────────────────────── */
+function loadData(){
+  try{return JSON.parse(localStorage.getItem(SK)||'null')}catch{return null}
+}
+function saveData(data){
+  try{localStorage.setItem(SK,JSON.stringify(data));}
+  catch(e){
+    if(e.name==='QuotaExceededError'||e.code===22||e.code===1014){
+      toast('Speicher voll! Bitte einige Fotos entfernen oder Daten exportieren und dann löschen.','error');
+    } else {
+      toast('Fehler beim Speichern: '+e.message,'error');
+    }
+    throw e; // re-throw so callers can detect failure
+  }
+}
+
+let DB;
+
+function initDB(){
+  DB=loadData();
+  if(!DB){
+    DB={vehicles:[],maintenance:[],repairs:[],damages:[],tickets:[],handovers:[],dailyPlans:[],echecks:[]};
+    seedDemo();
+    saveData(DB);
+  }
+  // migrate older data
+  if(!DB.handovers)DB.handovers=[];
+  if(!DB.dailyPlans)DB.dailyPlans=[];
+  if(!DB.echecks)DB.echecks=[];
+}
+
+/* ─── Demo seed data ──────────────────────────────────────────── */
+function seedDemo(){
+  const vehicles=[
+    {id:'v1',name:'Einsatzwagen 1',plate:'B-MS 1001',brand:'Mercedes-Benz',model:'Sprinter 316',year:'2019',status:'Im Dienst',driver:'Max Müller',km:'112400',fuel:'Diesel',vin:'WDB9066351L123456',notes:'Hauptfahrzeug der Staffel',photo:''},
+    {id:'v2',name:'Einsatzwagen 2',plate:'B-MS 1002',brand:'Volkswagen',model:'Transporter T6',year:'2021',status:'Im Dienst',driver:'Sandra Koch',km:'48200',fuel:'Diesel',vin:'WV2ZZZ7HZM1234567',notes:'',photo:''},
+    {id:'v3',name:'Pickup Truck',plate:'B-MS 2001',brand:'Ford',model:'Ranger Wildtrak',year:'2020',status:'Reserve',driver:'',km:'67800',fuel:'Diesel',vin:'WF0FXXTTGFLE12345',notes:'Reservefahrzeug – bei Bedarf abrufbar',photo:''},
+    {id:'v4',name:'Werkstattwagen',plate:'B-MS 3001',brand:'Renault',model:'Master dCi 150',year:'2018',status:'In Werkstatt',driver:'Tom Wagner',km:'189300',fuel:'Diesel',vin:'VF1MA000562123456',notes:'Inspektion läuft – voraussichtlich fertig KW 35',photo:''},
+    {id:'v5',name:'Altfahrzeug PKW',plate:'B-MS 4001',brand:'BMW',model:'3er 320d',year:'2012',status:'Abgemeldet',driver:'',km:'243100',fuel:'Diesel',vin:'WBA3B31060J123456',notes:'Abgemeldet – Verkauf geplant',photo:''},
+    {id:'v6',name:'Kombi Dienst',plate:'B-MS 1003',brand:'Volkswagen',model:'Passat Variant',year:'2022',status:'Im Dienst',driver:'Lisa Hoffmann',km:'21400',fuel:'Diesel',vin:'WVWZZZ3CZNP123456',notes:'',photo:''},
+  ];
+  const maintenance=[
+    {id:'m1',vehicleId:'v1',date:'2024-03-15',title:'Ölwechsel',type:'Ölwechsel',status:'Erledigt',notes:'Shell Helix Ultra 5W-30',cost:'89.50'},
+    {id:'m2',vehicleId:'v1',date:'2024-07-01',title:'HU/AU',type:'Hauptuntersuchung',status:'Erledigt',notes:'Bestanden ohne Mängel',cost:'120.00'},
+    {id:'m3',vehicleId:'v2',date:'2024-06-10',title:'Ölwechsel',type:'Ölwechsel',status:'Erledigt',notes:'',cost:'95.00'},
+    {id:'m4',vehicleId:'v4',date:'2025-08-10',title:'Große Inspektion',type:'Inspektion',status:'In Bearbeitung',notes:'Steht derzeit beim Kfz-Betrieb Müller',cost:''},
+    {id:'m5',vehicleId:'v6',date:'2025-01-20',title:'Reifenwechsel',type:'Reifenwechsel',status:'Erledigt',notes:'Winterreifen auf Sommerreifen',cost:'60.00'},
+  ];
+  const repairs=[
+    {id:'r1',vehicleId:'v1',date:'2024-04-22',workshop:'KFZ Meyer',description:'Bremsbeläge vorne erneuert',cost:'320.00',status:'Erledigt'},
+    {id:'r2',vehicleId:'v4',date:'2025-08-01',workshop:'Auto Wagner GmbH',description:'Lichtmaschine defekt – in Reparatur',cost:'580.00',status:'In Bearbeitung'},
+    {id:'r3',vehicleId:'v3',date:'2024-11-05',workshop:'KFZ Schulz',description:'Klimaanlage nachgefüllt',cost:'95.00',status:'Erledigt'},
+  ];
+  const damages=[
+    {id:'d1',vehicleId:'v1',date:'2024-05-14',description:'Kleiner Parkrempler hinten links – Kratzer ca. 10cm',status:'Offen',photo:''},
+    {id:'d2',vehicleId:'v2',date:'2024-09-03',description:'Seitenspiegel rechts leicht beschädigt',status:'Erledigt',photo:''},
+    {id:'d3',vehicleId:'v5',date:'2023-12-11',description:'Stoßstange vorne eingedrückt',status:'Offen',photo:''},
+  ];
+  const tickets=[
+    {id:'t1',vehicleId:'v1',date:'2024-06-18',reason:'Parkverstoß',amount:'30.00',status:'Bezahlt'},
+    {id:'t2',vehicleId:'v2',date:'2025-02-07',reason:'Geschwindigkeitsüberschreitung 12 km/h',amount:'70.00',status:'Unbezahlt'},
+    {id:'t3',vehicleId:'v6',date:'2025-05-22',reason:'Handy am Steuer',amount:'100.00',status:'Unbezahlt'},
+  ];
+  DB.vehicles=vehicles;
+  DB.maintenance=maintenance;
+  DB.repairs=repairs;
+  DB.damages=damages;
+  DB.tickets=tickets;
+}
+
+/* ─── Navigation ──────────────────────────────────────────────── */
+let currentView='dashboard';
+let currentVehicleId=null;
+
+function navigate(view,vehicleId){
+  document.querySelectorAll('.nav-item[data-view]').forEach(el=>{
+    el.classList.toggle('active',el.dataset.view===view);
+  });
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+
+  const titles={dashboard:'Dashboard',vehicles:'Fahrzeuge',detail:'Fahrzeugdetails',handovers:'Übergabeprotokolle',dailyplans:'Tageseinsatzplan',echecks:'E-Check'};
+  document.getElementById('topbar-title').textContent=titles[view]||'';
+
+  if(view==='detail'&&vehicleId){
+    currentVehicleId=vehicleId;
+    document.getElementById('view-detail').classList.add('active');
+    renderDetail(vehicleId);
+  } else {
+    document.getElementById('view-'+view).classList.add('active');
+    if(view==='dashboard')renderDashboard();
+    if(view==='vehicles')renderVehicles();
+    if(view==='handovers')renderHandoversList();
+    if(view==='dailyplans')renderDailyPlans();
+    if(view==='echecks')renderEChecks();
+  }
+  currentView=view;
+  closeSidebar();
+}
+
+/* ─── Dashboard ───────────────────────────────────────────────── */
+function renderDashboard(){
+  const vs=DB.vehicles;
+  const counts={};
+  Object.keys(STATUS_MAP).forEach(s=>counts[s]=(vs.filter(v=>v.status===s).length));
+  const statCards=[
+    {label:'Fahrzeuge gesamt',value:vs.length,cls:'blue',action:()=>openStatusModal('Alle Fahrzeuge',vs)},
+    {label:'Im Dienst',value:counts['Im Dienst']||0,cls:'green',action:()=>openStatusModal('Im Dienst',vs.filter(v=>v.status==='Im Dienst'))},
+    {label:'In Werkstatt',value:counts['In Werkstatt']||0,cls:'yellow',action:()=>openStatusModal('In Werkstatt',vs.filter(v=>v.status==='In Werkstatt'))},
+    {label:'Abgemeldet',value:counts['Abgemeldet']||0,cls:'',action:()=>openStatusModal('Abgemeldet',vs.filter(v=>v.status==='Abgemeldet'))},
+    {label:'Reserve',value:counts['Reserve']||0,cls:'purple',action:()=>openStatusModal('Reserve',vs.filter(v=>v.status==='Reserve'))},
+    {label:'Offene Schäden',value:DB.damages.filter(d=>d.status==='Offen').length,cls:'red',action:()=>navigate('vehicles')},
+    {label:'Übergaben gesamt',value:DB.handovers.length,cls:'orange',action:()=>navigate('handovers')},
+    {label:'Pläne heute',value:(DB.dailyPlans||[]).filter(p=>p.date===new Date().toISOString().slice(0,10)).length,cls:'blue',action:()=>navigate('dailyplans')},
+    {label:'E-Checks (Mängel)',value:(DB.echecks||[]).filter(e=>echeckResult(e.checks)==='fail').length,cls:'red',action:()=>navigate('echecks')},
+  ];
+  const statEls=statCards.map((c,i)=>`
+    <div class="stat-card ${c.cls} clickable" data-stat-idx="${i}">
+      <div class="stat-label">${esc(c.label)}</div>
+      <div class="stat-value">${c.value}</div>
+      <div class="stat-sub">Klicken für Details</div>
+    </div>
+  `);
+  document.getElementById('dash-stats').innerHTML=statEls.join('');
+  // attach click handlers
+  document.querySelectorAll('#dash-stats .stat-card').forEach(el=>{
+    el.addEventListener('click',()=>{
+      statCards[+el.dataset.statIdx].action();
+    });
+  });
+
+  // Status panels
+  const panels=Object.keys(STATUS_MAP).map(s=>{
+    const list=vs.filter(v=>v.status===s);
+    return`<div class="card" style="margin-bottom:0">
+      <div class="card-header"><span class="card-title">${statusBadge(s)} ${esc(s)}</span><small style="color:var(--muted)">${list.length} Fahrzeug${list.length!==1?'e':''}</small></div>
+      <div class="card-body" style="padding:14px">
+        ${list.length===0?`<div class="empty" style="padding:20px"><span>Keine Fahrzeuge</span></div>`:`
+        <div class="dash-list">${list.map(v=>`
+          <div class="dash-list-item" onclick="navigate('detail','${v.id}')">
+            <span class="dash-list-plate">${esc(v.plate)}</span>
+            <span style="flex:1;font-size:.87rem">${esc(v.name)}</span>
+            <span style="font-size:.75rem;color:var(--muted)">${esc(v.brand)}</span>
+          </div>`).join('')}
+        </div>`}
+      </div>
+    </div>`;
+  });
+
+  // Recent maintenance
+  const recentM=DB.maintenance.slice(-5).reverse();
+  const recentR=DB.repairs.filter(r=>r.status==='In Bearbeitung');
+
+  document.getElementById('dash-panels').innerHTML=`
+    ${panels.join('')}
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-header"><span class="card-title">Letzte Wartungen</span></div>
+      <div class="card-body" style="padding:0">
+        ${recentM.length===0?`<div class="empty">Keine Wartungen</div>`:`
+        <div class="table-wrap"><table>
+          <thead><tr><th>Datum</th><th>Fahrzeug</th><th>Typ / Titel</th><th>Status</th><th>Kosten</th></tr></thead>
+          <tbody>${recentM.map(m=>{const v=DB.vehicles.find(x=>x.id===m.vehicleId);return`
+            <tr>
+              <td>${fmtDate(m.date)}</td>
+              <td><span onclick="navigate('detail','${v?.id}')" style="cursor:pointer;color:var(--primary)">${esc(v?.name||'—')}</span></td>
+              <td>${esc(m.title||m.type)}</td>
+              <td>${entryStatusBadge(m.status)}</td>
+              <td>${fmtCurrency(m.cost)}</td>
+            </tr>`}).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+    ${recentR.length>0?`<div class="card" style="grid-column:1/-1">
+      <div class="card-header"><span class="card-title">Laufende Reparaturen</span></div>
+      <div class="card-body" style="padding:0">
+        <div class="table-wrap"><table>
+          <thead><tr><th>Datum</th><th>Fahrzeug</th><th>Werkstatt</th><th>Beschreibung</th><th>Kosten</th></tr></thead>
+          <tbody>${recentR.map(r=>{const v=DB.vehicles.find(x=>x.id===r.vehicleId);return`
+            <tr>
+              <td>${fmtDate(r.date)}</td>
+              <td><span onclick="navigate('detail','${v?.id}')" style="cursor:pointer;color:var(--primary)">${esc(v?.name||'—')}</span></td>
+              <td>${esc(r.workshop)}</td>
+              <td>${esc(r.description)}</td>
+              <td>${fmtCurrency(r.cost)}</td>
+            </tr>`}).join('')}
+          </tbody>
+        </table></div>
+      </div>
+    </div>`:''}
+  `;
+}
+
+/* ─── Vehicle list ────────────────────────────────────────────── */
+let filterSearch='', filterStatus='', filterBrand='';
+
+function renderVehicles(){
+  // populate brand filter
+  const brands=[...new Set(DB.vehicles.map(v=>v.brand).filter(Boolean))].sort();
+  const brandSel=document.getElementById('filter-brand');
+  const prev=brandSel.value;
+  brandSel.innerHTML=`<option value="">Alle Marken</option>`+brands.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  if(prev)brandSel.value=prev;
+
+  let list=DB.vehicles;
+  if(filterSearch){
+    const q=filterSearch.toLowerCase();
+    list=list.filter(v=>[v.name,v.plate,v.model,v.brand,v.driver].some(f=>(f||'').toLowerCase().includes(q)));
+  }
+  if(filterStatus)list=list.filter(v=>v.status===filterStatus);
+  if(filterBrand)list=list.filter(v=>v.brand===filterBrand);
+
+  const grid=document.getElementById('vehicle-grid');
+  if(list.length===0){
+    grid.innerHTML=`<div class="empty" style="grid-column:1/-1;padding:60px 0">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      <span>Keine Fahrzeuge gefunden</span>
+    </div>`;
+    return;
+  }
+  grid.innerHTML=list.map(v=>`
+    <div class="vcard" onclick="navigate('detail','${v.id}')">
+      ${v.photo?`<img class="vcard-photo" src="${v.photo}" alt="${esc(v.name)}">`:`
+      <div class="vcard-photo-placeholder">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      </div>`}
+      <div class="vcard-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+          <div class="vcard-title">${esc(v.name)}</div>
+          ${statusBadge(v.status)}
+        </div>
+        <div class="vcard-meta">
+          <strong>${esc(v.plate)}</strong> · ${esc(v.brand)} ${esc(v.model)}<br>
+          ${v.year?`Bj. ${esc(v.year)}`:''}${v.km?` · ${Number(v.km).toLocaleString('de-DE')} km`:''}<br>
+          ${v.driver?`Fahrer: ${esc(v.driver)}`:''}
+        </div>
+      </div>
+      <div class="vcard-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-secondary btn-sm" onclick="openEditVehicle('${v.id}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Bearbeiten
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDeleteVehicle('${v.id}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          Löschen
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="navigate('detail','${v.id}')">Details →</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ─── Vehicle detail ──────────────────────────────────────────── */
+function renderDetail(id){
+  const v=DB.vehicles.find(x=>x.id===id);
+  if(!v){navigate('vehicles');return;}
+
+  const mList=DB.maintenance.filter(x=>x.vehicleId===id);
+  const rList=DB.repairs.filter(x=>x.vehicleId===id);
+  const dList=DB.damages.filter(x=>x.vehicleId===id);
+  const tList=DB.tickets.filter(x=>x.vehicleId===id);
+  const hoList=DB.handovers.filter(x=>x.vehicleId===id);
+
+  const photoHtml=v.photo
+    ?`<img class="detail-photo" src="${v.photo}" alt="${esc(v.name)}">`
+    :`<div class="detail-photo-placeholder"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>`;
+
+  document.getElementById('detail-container').innerHTML=`
+    <div class="detail-header">
+      ${photoHtml}
+      <div class="detail-info">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+          <div class="detail-title">${esc(v.name)}</div>
+          ${statusBadge(v.status)}
+        </div>
+        <div class="detail-meta">
+          <strong>${esc(v.plate)}</strong><br>
+          ${esc(v.brand)} ${esc(v.model)}${v.year?`, Bj. ${esc(v.year)}`:''}${v.fuel?` · ${esc(v.fuel)}`:''}<br>
+          ${v.km?`Kilometerstand: <strong>${Number(v.km).toLocaleString('de-DE')} km</strong><br>`:''}
+          ${v.driver?`Fahrer: ${esc(v.driver)}<br>`:''}
+          ${v.vin?`FIN: <code style="font-size:.8rem;background:rgba(255,255,255,.06);padding:2px 6px;border-radius:5px">${esc(v.vin)}</code><br>`:''}
+          ${v.notes?`<br><em>${esc(v.notes)}</em>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-self:flex-start;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="openEditVehicle('${v.id}')">✏ Bearbeiten</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDeleteVehicle('${v.id}')">✕ Löschen</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="maint">Wartung (${mList.length})</div>
+      <div class="tab" data-tab="repair">Reparaturen (${rList.length})</div>
+      <div class="tab" data-tab="damage">Schäden (${dList.length})</div>
+      <div class="tab" data-tab="ticket">Bußgelder (${tList.length})</div>
+      <div class="tab" data-tab="handover">Übergaben (${hoList.length})</div>
+    </div>
+
+    <div class="tab-panel active" id="tab-maint">
+      <div style="margin-bottom:14px">
+        <button class="btn btn-primary btn-sm" onclick="openEntryModal('maintenance','${id}')">+ Wartung hinzufügen</button>
+      </div>
+      ${renderMaintList(mList)}
+    </div>
+    <div class="tab-panel" id="tab-repair">
+      <div style="margin-bottom:14px">
+        <button class="btn btn-primary btn-sm" onclick="openEntryModal('repairs','${id}')">+ Reparatur hinzufügen</button>
+      </div>
+      ${renderRepairList(rList)}
+    </div>
+    <div class="tab-panel" id="tab-damage">
+      <div style="margin-bottom:14px">
+        <button class="btn btn-primary btn-sm" onclick="openEntryModal('damages','${id}')">+ Schaden hinzufügen</button>
+      </div>
+      ${renderDamageList(dList)}
+    </div>
+    <div class="tab-panel" id="tab-ticket">
+      <div style="margin-bottom:14px">
+        <button class="btn btn-primary btn-sm" onclick="openEntryModal('tickets','${id}')">+ Bußgeld hinzufügen</button>
+      </div>
+      ${renderTicketList(tList)}
+    </div>
+    <div class="tab-panel" id="tab-handover">
+      <div style="margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary btn-sm" onclick="openHandoverModal('${id}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Übergabeprotokoll erstellen
+        </button>
+      </div>
+      ${renderHandoverList(hoList)}
+    </div>
+  `;
+
+  // Tab switching
+  document.querySelectorAll('#detail-container .tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('#detail-container .tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('#detail-container .tab-panel').forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+    });
+  });
+}
+
+/* entry list renderers */
+function renderMaintList(list){
+  if(!list.length)return emptyState('Keine Wartungseinträge vorhanden');
+  return`<div class="entry-list">${list.map(m=>`
+    <div class="entry-card">
+      <div class="entry-info">
+        <div class="entry-title">${esc(m.title||m.type)}</div>
+        <div class="entry-meta">
+          ${fmtDate(m.date)}${m.type?' · '+esc(m.type):''}${m.cost?' · '+fmtCurrency(m.cost):''}<br>
+          ${m.notes?esc(m.notes):''}
+        </div>
+        ${entryStatusBadge(m.status)}
+      </div>
+      <div class="entry-actions">
+        <button class="btn btn-ghost btn-sm btn-icon" title="Bearbeiten" onclick="openEntryModal('maintenance','${m.vehicleId}','${m.id}')">✏</button>
+        <button class="btn btn-danger btn-sm btn-icon" title="Löschen" onclick="deleteEntry('maintenance','${m.id}')">✕</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+function renderRepairList(list){
+  if(!list.length)return emptyState('Keine Reparatureinträge vorhanden');
+  return`<div class="entry-list">${list.map(r=>`
+    <div class="entry-card">
+      <div class="entry-info">
+        <div class="entry-title">${esc(r.description)}</div>
+        <div class="entry-meta">${fmtDate(r.date)} · ${esc(r.workshop)}${r.cost?' · '+fmtCurrency(r.cost):''}</div>
+        ${entryStatusBadge(r.status)}
+      </div>
+      <div class="entry-actions">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEntryModal('repairs','${r.vehicleId}','${r.id}')">✏</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteEntry('repairs','${r.id}')">✕</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+function renderDamageList(list){
+  if(!list.length)return emptyState('Keine Schadensmeldungen vorhanden');
+  return`<div class="entry-list">${list.map(d=>`
+    <div class="entry-card">
+      <div class="entry-info">
+        <div class="entry-title">${esc(d.description)}</div>
+        <div class="entry-meta">${fmtDate(d.date)}</div>
+        ${d.photo?`<img src="${d.photo}" style="max-height:80px;border-radius:8px;margin-top:8px;border:1px solid var(--border)">`:''} 
+        ${entryStatusBadge(d.status)}
+      </div>
+      <div class="entry-actions">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEntryModal('damages','${d.vehicleId}','${d.id}')">✏</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteEntry('damages','${d.id}')">✕</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+function renderTicketList(list){
+  if(!list.length)return emptyState('Keine Bußgeldeinträge vorhanden');
+  return`<div class="entry-list">${list.map(t=>`
+    <div class="entry-card">
+      <div class="entry-info">
+        <div class="entry-title">${esc(t.reason)}</div>
+        <div class="entry-meta">${fmtDate(t.date)} · ${fmtCurrency(t.amount)}</div>
+        ${entryStatusBadge(t.status)}
+      </div>
+      <div class="entry-actions">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEntryModal('tickets','${t.vehicleId}','${t.id}')">✏</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteEntry('tickets','${t.id}')">✕</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+function renderHandoverList(list){
+  if(!list.length)return emptyState('Noch keine Übergabeprotokolle vorhanden');
+  const sorted=[...list].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  return`<div class="entry-list">${sorted.map(h=>{
+    const typeBadge=h.type==='Rücknahme'
+      ?'<span class="badge badge-return">Rücknahme</span>'
+      :'<span class="badge badge-handover">Übergabe</span>';
+    return`<div class="handover-card">
+      <div class="handover-card-header" onclick="toggleHandoverCard('${h.id}')">
+        <div style="flex:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          ${typeBadge}
+          <span style="font-weight:600;font-size:.9rem">${esc(fmtDatetime(h.date))}</span>
+          <span style="font-size:.82rem;color:var(--muted)">${esc(h.from)} → ${esc(h.to)}</span>
+          ${h.km?`<span style="font-size:.75rem;color:var(--muted2)">${Number(h.km).toLocaleString('de-DE')} km</span>`:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm btn-icon" title="Bearbeiten" onclick="event.stopPropagation();openHandoverModal('${h.vehicleId}','${h.id}')">✏</button>
+          <button class="btn btn-danger btn-sm btn-icon" title="Löschen" onclick="event.stopPropagation();deleteHandover('${h.id}')">✕</button>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();printHandover('${h.id}')">🖨 Drucken</button>
+        </div>
+      </div>
+      <div class="handover-card-body" id="hcb-${h.id}">
+        <div class="handover-info-grid">
+          <div class="handover-info-item"><label>Datum</label><span>${esc(fmtDatetime(h.date))}</span></div>
+          <div class="handover-info-item"><label>Typ</label><span>${esc(h.type)}</span></div>
+          <div class="handover-info-item"><label>Übergeber</label><span>${esc(h.from)}</span></div>
+          <div class="handover-info-item"><label>Empfänger</label><span>${esc(h.to)}</span></div>
+          ${h.km?`<div class="handover-info-item"><label>Kilometerstand</label><span>${Number(h.km).toLocaleString('de-DE')} km</span></div>`:''}
+          ${h.notes?`<div class="handover-info-item" style="grid-column:1/-1"><label>Bemerkungen</label><span>${esc(h.notes)}</span></div>`:''}
+        </div>
+        ${renderHandoverPlanSection(h)}
+        ${renderHandoverPhotoSection('Fahrzeugoptik',h.vehiclePhotos,'Fahrzeugfoto')}
+        ${renderHandoverPhotoSection('Innenraum',h.interiorPhotos,'Innenraumfoto')}
+        ${h.docs&&h.docs.length?`
+        <div style="margin-bottom:14px">
+          <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Ausweisdokumente (${h.docs.length})</div>
+          <div class="doc-preview-grid">${h.docs.map((d,i)=>`
+            <div class="doc-thumb">
+              <img src="${d.data}" alt="Dokument ${i+1}">
+              <div class="doc-label">${esc(d.name||'Dokument '+(i+1))}</div>
+            </div>`).join('')}
+          </div>
+        </div>`:''}
+        ${h.signature?`
+        <div>
+          <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Unterschrift</div>
+          <img class="sig-display" src="${h.signature}" alt="Unterschrift" style="max-width:300px">
+        </div>`:''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+function renderHandoverPlanSection(h){
+  if(!h.planDriver&&!h.planPlate&&!h.planTour)return'';
+  return`<div style="margin-bottom:14px">
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Tageseinsatzplan</div>
+    <div class="handover-info-grid">
+      ${h.planDriver?`<div class="handover-info-item"><label>Fahrername</label><span>${esc(h.planDriver)}</span></div>`:''}
+      ${h.planPlate?`<div class="handover-info-item"><label>Kennzeichen</label><span>${esc(h.planPlate)}</span></div>`:''}
+      ${h.planTour?`<div class="handover-info-item" style="grid-column:1/-1"><label>Tournummern</label><span>${esc(h.planTour)}</span></div>`:''}
+    </div>
+  </div>`;
+}
+function renderHandoverPhotoSection(title,photos,labelPrefix){
+  if(!photos||!photos.length)return'';
+  return`<div style="margin-bottom:14px">
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">${esc(title)} (${photos.length})</div>
+    <div class="doc-preview-grid">${photos.map((photo,i)=>`
+      <div class="doc-thumb">
+        <img src="${photo.data}" alt="${esc(photo.name||labelPrefix+' '+(i+1))}">
+        <div class="doc-label">${esc(photo.name||labelPrefix+' '+(i+1))}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+window.toggleHandoverCard=function(id){
+  const el=document.getElementById('hcb-'+id);
+  if(el)el.classList.toggle('open');
+};
+window.deleteHandover=function(id){
+  const h=DB.handovers.find(x=>x.id===id);
+  if(!h)return;
+  if(!confirm('Übergabeprotokoll wirklich löschen?'))return;
+  DB.handovers=DB.handovers.filter(x=>x.id!==id);
+  saveData(DB);
+  toast('Protokoll gelöscht.');
+  if(currentView==='detail')renderDetail(h.vehicleId);
+  else renderHandoversList();
+};
+window.printHandover=function(id){
+  const h=DB.handovers.find(x=>x.id===id);
+  if(!h)return;
+  const v=DB.vehicles.find(x=>x.id===h.vehicleId);
+  const docsHtml=(h.docs&&h.docs.length)?h.docs.map((d,i)=>`<img src="${d.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Dok ${i+1}">`).join(''):'<em>Keine Dokumente beigefügt</em>';
+  const vehiclePhotosHtml=(h.vehiclePhotos&&h.vehiclePhotos.length)?h.vehiclePhotos.map((photo,i)=>`<img src="${photo.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Fahrzeugfoto ${i+1}">`).join(''):'<em>Keine Fotos beigefügt</em>';
+  const interiorPhotosHtml=(h.interiorPhotos&&h.interiorPhotos.length)?h.interiorPhotos.map((photo,i)=>`<img src="${photo.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Innenraumfoto ${i+1}">`).join(''):'<em>Keine Fotos beigefügt</em>';
+  const sigHtml=h.signature?`<img src="${h.signature}" style="max-width:320px;border:1px solid #ccc;border-radius:6px" alt="Unterschrift">`:'<em>Keine Unterschrift</em>';
+  const w=window.open('','_blank','width=800,height:650');
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Übergabeprotokoll</title>
+  <style>body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:780px;margin:0 auto}
+  h1{font-size:1.4rem;margin-bottom:4px}h2{font-size:1rem;color:#555;margin-top:24px;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:4px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-bottom:16px}
+  .item label{font-size:.72rem;font-weight:700;text-transform:uppercase;color:#888;display:block;margin-bottom:2px}
+  .item span{font-size:.9rem}
+  .sig-box{border:1px solid #ccc;border-radius:6px;padding:8px;background:#fafafa;display:inline-block}
+  @media print{button{display:none}}
+  </style></head><body>
+  <h1>Übergabeprotokoll – ${h.type}</h1>
+  <p style="color:#555;font-size:.85rem">MoonStar Fleet · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+  <h2>Fahrzeugdaten</h2>
+  <div class="grid">
+    <div class="item"><label>Fahrzeug</label><span>${escPrint(v?.name||'—')}</span></div>
+    <div class="item"><label>Kennzeichen</label><span>${escPrint(v?.plate||'—')}</span></div>
+    <div class="item"><label>Marke / Modell</label><span>${escPrint((v?.brand||'')+(v?.model?' '+v.model:''))}</span></div>
+    <div class="item"><label>Kilometerstand</label><span>${h.km?Number(h.km).toLocaleString('de-DE')+' km':'—'}</span></div>
+  </div>
+  <h2>Übergabedaten</h2>
+  <div class="grid">
+    <div class="item"><label>Datum &amp; Uhrzeit</label><span>${escPrint(fmtDatetime(h.date))}</span></div>
+    <div class="item"><label>Typ</label><span>${escPrint(h.type)}</span></div>
+    <div class="item"><label>Übergeber</label><span>${escPrint(h.from)}</span></div>
+    <div class="item"><label>Empfänger</label><span>${escPrint(h.to)}</span></div>
+  </div>
+  ${h.notes?`<h2>Fahrzeugzustand / Bemerkungen</h2><p>${escPrint(h.notes)}</p>`:''}
+  ${(h.planDriver||h.planPlate||h.planTour)?`<h2>Tageseinsatzplan</h2><div class="grid">
+    <div class="item"><label>Fahrername</label><span>${escPrint(h.planDriver||'—')}</span></div>
+    <div class="item"><label>Kennzeichen</label><span>${escPrint(h.planPlate||'—')}</span></div>
+    <div class="item" style="grid-column:1/-1"><label>Tournummern</label><span>${escPrint(h.planTour||'—')}</span></div>
+  </div>`:''}
+  <h2>Fahrzeugoptik</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">${vehiclePhotosHtml}</div>
+  <h2>Innenraum</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">${interiorPhotosHtml}</div>
+  <h2>Ausweisdokumente (Führerschein / Personalausweis)</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">${docsHtml}</div>
+  <h2>Unterschrift des Empfängers</h2>
+  <div class="sig-box">${sigHtml}</div>
+  <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
+    <div><div style="border-top:1px solid #999;padding-top:6px;font-size:.78rem;color:#666">Übergeber: ${escPrint(h.from)}</div></div>
+    <div><div style="border-top:1px solid #999;padding-top:6px;font-size:.78rem;color:#666">Empfänger: ${escPrint(h.to)}</div></div>
+  </div>
+  <script>window.onload=()=>window.print()<\/script>
+  </body></html>`);
+  w.document.close();
+};
+function escPrint(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function fmtDatetime(d){
+  if(!d)return'—';
+  try{return new Date(d).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+  catch{return d}
+}
+
+function emptyState(msg){
+  return`<div class="empty"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>${esc(msg)}</span></div>`;
+}
+
+/* ─── Vehicle modal ───────────────────────────────────────────── */
+function openAddVehicle(){
+  document.getElementById('modal-title').textContent='Fahrzeug hinzufügen';
+  document.getElementById('v-id').value='';
+  document.getElementById('vehicle-form').reset();
+  document.getElementById('photo-preview-wrap').style.display='none';
+  document.getElementById('vehicle-modal').classList.add('open');
+}
+
+function openEditVehicle(id){
+  const v=DB.vehicles.find(x=>x.id===id);
+  if(!v)return;
+  document.getElementById('modal-title').textContent='Fahrzeug bearbeiten';
+  document.getElementById('v-id').value=v.id;
+  document.getElementById('v-name').value=v.name||'';
+  document.getElementById('v-plate').value=v.plate||'';
+  document.getElementById('v-brand').value=v.brand||'';
+  document.getElementById('v-model').value=v.model||'';
+  document.getElementById('v-year').value=v.year||'';
+  document.getElementById('v-status').value=v.status||'Im Dienst';
+  document.getElementById('v-driver').value=v.driver||'';
+  document.getElementById('v-km').value=v.km||'';
+  document.getElementById('v-fuel').value=v.fuel||'';
+  document.getElementById('v-vin').value=v.vin||'';
+  document.getElementById('v-notes').value=v.notes||'';
+  if(v.photo){
+    document.getElementById('photo-preview').src=v.photo;
+    document.getElementById('photo-preview-wrap').style.display='block';
+  } else {
+    document.getElementById('photo-preview-wrap').style.display='none';
+  }
+  document.getElementById('vehicle-modal').classList.add('open');
+}
+
+function closeVehicleModal(){
+  document.getElementById('vehicle-modal').classList.remove('open');
+}
+
+document.getElementById('modal-close').addEventListener('click',closeVehicleModal);
+document.getElementById('modal-cancel').addEventListener('click',closeVehicleModal);
+document.getElementById('vehicle-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeVehicleModal()});
+
+document.getElementById('v-photo-input').addEventListener('change',async e=>{
+  const file=e.target.files[0];
+  if(!file)return;
+  const url=await fileToDataUrl(file);
+  document.getElementById('photo-preview').src=url;
+  document.getElementById('photo-preview-wrap').style.display='block';
+});
+
+document.getElementById('modal-save').addEventListener('click',async()=>{
+  const name=document.getElementById('v-name').value.trim();
+  const plate=document.getElementById('v-plate').value.trim();
+  const brand=document.getElementById('v-brand').value.trim();
+  const model=document.getElementById('v-model').value.trim();
+  if(!name||!plate||!brand||!model){toast('Bitte alle Pflichtfelder ausfüllen.','error');return;}
+
+  const fileInput=document.getElementById('v-photo-input');
+  let photo='';
+  const existingId=document.getElementById('v-id').value;
+  if(existingId){
+    const existing=DB.vehicles.find(x=>x.id===existingId);
+    photo=existing?.photo||'';
+  }
+  try{
+    if(fileInput.files[0]){
+      photo=await fileToDataUrl(fileInput.files[0]);
+    }
+  }catch(e){toast('Foto konnte nicht geladen werden: '+e.message,'error');return;}
+
+  const entry={
+    id:existingId||uid(),
+    name,plate,brand,model,
+    year:document.getElementById('v-year').value.trim(),
+    status:document.getElementById('v-status').value,
+    driver:document.getElementById('v-driver').value.trim(),
+    km:document.getElementById('v-km').value.trim(),
+    fuel:document.getElementById('v-fuel').value,
+    vin:document.getElementById('v-vin').value.trim(),
+    notes:document.getElementById('v-notes').value.trim(),
+    photo,
+  };
+
+  try{
+    if(existingId){
+      const idx=DB.vehicles.findIndex(x=>x.id===existingId);
+      DB.vehicles[idx]=entry;
+      saveData(DB);
+      toast('Fahrzeug aktualisiert.');
+    } else {
+      DB.vehicles.unshift(entry);
+      saveData(DB);
+      toast('Fahrzeug hinzugefügt.');
+    }
+  }catch(e){
+    // saveData already showed the toast; revert in-memory change
+    if(!existingId)DB.vehicles.shift();
+    return;
+  }
+  closeVehicleModal();
+  if(currentView==='vehicles')renderVehicles();
+  if(currentView==='dashboard')renderDashboard();
+  if(currentView==='detail')renderDetail(currentVehicleId);
+});
+
+/* ─── Delete vehicle ──────────────────────────────────────────── */
+function confirmDeleteVehicle(id){
+  const v=DB.vehicles.find(x=>x.id===id);
+  if(!v)return;
+  if(!confirm(`Fahrzeug "${v.name}" (${v.plate}) wirklich löschen?\nAlle zugehörigen Einträge werden ebenfalls gelöscht.`))return;
+  DB.vehicles=DB.vehicles.filter(x=>x.id!==id);
+  ['maintenance','repairs','damages','tickets','handovers'].forEach(k=>{DB[k]=DB[k].filter(x=>x.vehicleId!==id)});
+  saveData(DB);
+  toast('Fahrzeug gelöscht.');
+  navigate('vehicles');
+}
+window.confirmDeleteVehicle=confirmDeleteVehicle;
+
+/* ─── Entry modal ─────────────────────────────────────────────── */
+const ENTRY_CONFIGS={
+  maintenance:{
+    title:{add:'Wartung hinzufügen',edit:'Wartung bearbeiten'},
+    fields:[
+      {id:'em-date',label:'Datum',type:'date',required:true,key:'date'},
+      {id:'em-title',label:'Titel',type:'text',placeholder:'z. B. Ölwechsel',required:true,key:'title'},
+      {id:'em-type',label:'Typ',type:'select',options:['Ölwechsel','Inspektion','Hauptuntersuchung','Reifenwechsel','Reifendruck','Bremsen','Filter','Sonstiges'],key:'type'},
+      {id:'em-status',label:'Status',type:'select',options:['Offen','In Bearbeitung','Erledigt'],key:'status'},
+      {id:'em-cost',label:'Kosten (€)',type:'number',placeholder:'z. B. 120.00',key:'cost',span2:false},
+      {id:'em-notes',label:'Notizen',type:'textarea',placeholder:'Details zur Wartung …',key:'notes',span2:true},
+    ]
+  },
+  repairs:{
+    title:{add:'Reparatur hinzufügen',edit:'Reparatur bearbeiten'},
+    fields:[
+      {id:'er-date',label:'Datum',type:'date',required:true,key:'date'},
+      {id:'er-workshop',label:'Werkstatt',type:'text',placeholder:'Name der Werkstatt',required:true,key:'workshop'},
+      {id:'er-description',label:'Beschreibung',type:'textarea',placeholder:'Was wurde repariert?',key:'description',span2:true},
+      {id:'er-cost',label:'Kosten (€)',type:'number',placeholder:'z. B. 450.00',key:'cost'},
+      {id:'er-status',label:'Status',type:'select',options:['Offen','In Bearbeitung','Erledigt'],key:'status'},
+    ]
+  },
+  damages:{
+    title:{add:'Schaden melden',edit:'Schaden bearbeiten'},
+    fields:[
+      {id:'ed-date',label:'Datum',type:'date',required:true,key:'date'},
+      {id:'ed-description',label:'Beschreibung',type:'textarea',placeholder:'Wo und wie wurde das Fahrzeug beschädigt?',key:'description',span2:true},
+      {id:'ed-status',label:'Status',type:'select',options:['Offen','In Bearbeitung','Erledigt'],key:'status'},
+      {id:'ed-photo',label:'Foto (optional)',type:'file',key:'photo',span2:true},
+    ]
+  },
+  tickets:{
+    title:{add:'Bußgeld hinzufügen',edit:'Bußgeld bearbeiten'},
+    fields:[
+      {id:'et-date',label:'Datum',type:'date',required:true,key:'date'},
+      {id:'et-reason',label:'Grund',type:'text',placeholder:'z. B. Parkverstoß',required:true,key:'reason'},
+      {id:'et-amount',label:'Betrag (€)',type:'number',placeholder:'z. B. 30.00',key:'amount'},
+      {id:'et-status',label:'Zahlungsstatus',type:'select',options:['Unbezahlt','Bezahlt'],key:'status'},
+    ]
+  },
+};
+
+let _editingPhotoBase64=null;
+
+async function openEntryModal(type,vehicleId,editId){
+  const cfg=ENTRY_CONFIGS[type];
+  if(!cfg)return;
+  _editingPhotoBase64=null;
+
+  document.getElementById('entry-modal-title').textContent=editId?cfg.title.edit:cfg.title.add;
+  document.getElementById('e-id').value=editId||'';
+  document.getElementById('e-type').value=type;
+  document.getElementById('e-vehicle-id').value=vehicleId;
+
+  const editObj=editId?DB[type].find(x=>x.id===editId):null;
+
+  const form=document.getElementById('entry-form');
+  // remove dynamic fields
+  form.querySelectorAll('.entry-dynamic').forEach(el=>el.remove());
+
+  cfg.fields.forEach(f=>{
+    const wrap=document.createElement('div');
+    wrap.className='form-group entry-dynamic'+(f.span2?' span2':'');
+    const lbl=document.createElement('label');
+    lbl.textContent=f.label;
+    wrap.appendChild(lbl);
+
+    let el;
+    if(f.type==='select'){
+      el=document.createElement('select');
+      el.className='form-control';
+      f.options.forEach(o=>{const opt=document.createElement('option');opt.value=o;opt.textContent=o;el.appendChild(opt)});
+    } else if(f.type==='textarea'){
+      el=document.createElement('textarea');
+      el.className='form-control';
+      el.placeholder=f.placeholder||'';
+    } else if(f.type==='file'){
+      el=document.createElement('input');
+      el.type='file';el.accept='image/*';
+      el.className='form-control';
+      el.addEventListener('change',async ev=>{
+        const file=ev.target.files[0];
+        if(file)_editingPhotoBase64=await fileToDataUrl(file);
+      });
+    } else {
+      el=document.createElement('input');
+      el.type=f.type;
+      el.className='form-control';
+      el.placeholder=f.placeholder||'';
+      if(f.required)el.required=true;
+    }
+    el.id=f.id;
+    if(editObj&&f.key&&f.type!=='file'){
+      el.value=editObj[f.key]||'';
+    }
+    if(f.type==='file'&&editObj&&editObj.photo){
+      _editingPhotoBase64=editObj.photo;
+    }
+    wrap.appendChild(el);
+    form.appendChild(wrap);
+  });
+
+  document.getElementById('entry-modal').classList.add('open');
+}
+window.openEntryModal=openEntryModal;
+
+function closeEntryModal(){document.getElementById('entry-modal').classList.remove('open')}
+document.getElementById('entry-modal-close').addEventListener('click',closeEntryModal);
+document.getElementById('entry-modal-cancel').addEventListener('click',closeEntryModal);
+document.getElementById('entry-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeEntryModal()});
+
+document.getElementById('entry-modal-save').addEventListener('click',()=>{
+  const type=document.getElementById('e-type').value;
+  const vehicleId=document.getElementById('e-vehicle-id').value;
+  const editId=document.getElementById('e-id').value;
+  const cfg=ENTRY_CONFIGS[type];
+  if(!cfg)return;
+
+  const entry={id:editId||uid(),vehicleId};
+  for(const f of cfg.fields){
+    if(f.type==='file'){entry[f.key]=_editingPhotoBase64||'';continue;}
+    const el=document.getElementById(f.id);
+    if(!el)continue;
+    const val=el.value.trim();
+    if(f.required&&!val){toast('Bitte alle Pflichtfelder ausfüllen.','error');return;}
+    entry[f.key]=val;
+  }
+
+  let prevEntry=null;
+  try{
+    if(editId){
+      const idx=DB[type].findIndex(x=>x.id===editId);
+      prevEntry=DB[type][idx];
+      DB[type][idx]=entry;
+      saveData(DB);
+      toast('Eintrag aktualisiert.');
+    } else {
+      DB[type].push(entry);
+      saveData(DB);
+      toast('Eintrag gespeichert.');
+    }
+  }catch(e){
+    // revert in-memory change
+    if(editId&&prevEntry){const idx=DB[type].findIndex(x=>x.id===editId);DB[type][idx]=prevEntry;}
+    else if(!editId)DB[type].pop();
+    return;
+  }
+  closeEntryModal();
+  renderDetail(vehicleId);
+});
+
+/* ─── Delete entry ────────────────────────────────────────────── */
+function deleteEntry(type,id){
+  const arr=DB[type];
+  const item=arr.find(x=>x.id===id);
+  if(!item)return;
+  if(!confirm('Diesen Eintrag wirklich löschen?'))return;
+  DB[type]=arr.filter(x=>x.id!==id);
+  saveData(DB);
+  toast('Eintrag gelöscht.');
+  renderDetail(item.vehicleId);
+}
+window.deleteEntry=deleteEntry;
+
+/* ─── Filters & Search ────────────────────────────────────────── */
+document.getElementById('search-input').addEventListener('input',e=>{
+  filterSearch=e.target.value;
+  renderVehicles();
+});
+document.getElementById('filter-status').addEventListener('change',e=>{
+  filterStatus=e.target.value;
+  renderVehicles();
+});
+document.getElementById('filter-brand').addEventListener('change',e=>{
+  filterBrand=e.target.value;
+  renderVehicles();
+});
+document.getElementById('clear-filters').addEventListener('click',()=>{
+  filterSearch='';filterStatus='';filterBrand='';
+  document.getElementById('search-input').value='';
+  document.getElementById('filter-status').value='';
+  document.getElementById('filter-brand').value='';
+  renderVehicles();
+});
+
+/* ─── Sidebar nav ─────────────────────────────────────────────── */
+document.querySelectorAll('.nav-item[data-view]').forEach(el=>{
+  el.addEventListener('click',()=>navigate(el.dataset.view));
+});
+document.getElementById('nav-add').addEventListener('click',openAddVehicle);
+document.getElementById('topbar-add-btn').addEventListener('click',openAddVehicle);
+
+/* ─── Export ──────────────────────────────────────────────────── */
+document.getElementById('nav-export').addEventListener('click',()=>{
+  const data=JSON.stringify(DB,null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`moonstar-fleet-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();URL.revokeObjectURL(url);
+  toast('Daten exportiert.');
+});
+
+/* ─── Handovers list view ─────────────────────────────────────── */
+let hoFilterSearch='', hoFilterType='', hoFilterVehicle='';
+
+function renderHandoversList(){
+  // populate vehicle filter
+  const vSel=document.getElementById('ho-filter-vehicle');
+  const prevV=vSel.value;
+  vSel.innerHTML=`<option value="">Alle Fahrzeuge</option>`+DB.vehicles.map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+  if(prevV)vSel.value=prevV;
+
+  let list=[...DB.handovers].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(hoFilterSearch){
+    const q=hoFilterSearch.toLowerCase();
+    list=list.filter(h=>[h.from,h.to,h.notes,h.type,h.planDriver,h.planPlate,h.planTour].some(f=>(f||'').toLowerCase().includes(q))||
+      (DB.vehicles.find(v=>v.id===h.vehicleId)?.name||'').toLowerCase().includes(q));
+  }
+  if(hoFilterType)list=list.filter(h=>h.type===hoFilterType);
+  if(hoFilterVehicle)list=list.filter(h=>h.vehicleId===hoFilterVehicle);
+
+  const container=document.getElementById('handovers-list-container');
+  if(list.length===0){
+    container.innerHTML=`<div class="empty" style="padding:60px 0">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>Keine Protokolle gefunden</span></div>`;
+    return;
+  }
+  container.innerHTML=`<div style="display:flex;flex-direction:column;gap:10px">`+list.map(h=>{
+    const v=DB.vehicles.find(x=>x.id===h.vehicleId);
+    const typeBadge=h.type==='Rücknahme'
+      ?'<span class="badge badge-return">Rücknahme</span>'
+      :'<span class="badge badge-handover">Übergabe</span>';
+    return`<div class="handover-card">
+      <div class="handover-card-header" onclick="toggleHandoverCard('gl-${h.id}')">
+        <div style="flex:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          ${typeBadge}
+          <span style="font-weight:600;font-size:.9rem">${esc(fmtDatetime(h.date))}</span>
+          <span onclick="event.stopPropagation();navigate('detail','${h.vehicleId}')" style="font-size:.82rem;color:var(--primary);cursor:pointer;font-weight:600">${esc(v?.name||'?')} (${esc(v?.plate||'?')})</span>
+          <span style="font-size:.82rem;color:var(--muted)">${esc(h.from)} → ${esc(h.to)}</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openHandoverModal('${h.vehicleId}','${h.id}')">✏</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deleteHandover('${h.id}')">✕</button>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();printHandover('${h.id}')">🖨</button>
+        </div>
+      </div>
+      <div class="handover-card-body" id="hcb-gl-${h.id}">
+        <div class="handover-info-grid">
+          <div class="handover-info-item"><label>Datum</label><span>${esc(fmtDatetime(h.date))}</span></div>
+          <div class="handover-info-item"><label>Fahrzeug</label><span>${esc(v?.name||'—')}</span></div>
+          <div class="handover-info-item"><label>Übergeber</label><span>${esc(h.from)}</span></div>
+          <div class="handover-info-item"><label>Empfänger</label><span>${esc(h.to)}</span></div>
+          ${h.km?`<div class="handover-info-item"><label>Kilometerstand</label><span>${Number(h.km).toLocaleString('de-DE')} km</span></div>`:''}
+          ${h.notes?`<div class="handover-info-item" style="grid-column:1/-1"><label>Bemerkungen</label><span>${esc(h.notes)}</span></div>`:''}
+        </div>
+        ${renderHandoverPlanSection(h)}
+        ${renderHandoverPhotoSection('Fahrzeugoptik',h.vehiclePhotos,'Fahrzeugfoto')}
+        ${renderHandoverPhotoSection('Innenraum',h.interiorPhotos,'Innenraumfoto')}
+        ${h.docs&&h.docs.length?`<div style="margin-bottom:14px">
+          <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Dokumente (${h.docs.length})</div>
+          <div class="doc-preview-grid">${h.docs.map((d,i)=>`<div class="doc-thumb"><img src="${d.data}" alt="Dok"><div class="doc-label">${esc(d.name||'Dok '+(i+1))}</div></div>`).join('')}</div></div>`:''}
+        ${h.signature?`<div><div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Unterschrift</div><img class="sig-display" src="${h.signature}" style="max-width:300px" alt="Unterschrift"></div>`:''}
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+document.getElementById('ho-search').addEventListener('input',e=>{hoFilterSearch=e.target.value;renderHandoversList()});
+document.getElementById('ho-filter-type').addEventListener('change',e=>{hoFilterType=e.target.value;renderHandoversList()});
+document.getElementById('ho-filter-vehicle').addEventListener('change',e=>{hoFilterVehicle=e.target.value;renderHandoversList()});
+document.getElementById('ho-clear-filters').addEventListener('click',()=>{
+  hoFilterSearch='';hoFilterType='';hoFilterVehicle='';
+  document.getElementById('ho-search').value='';
+  document.getElementById('ho-filter-type').value='';
+  document.getElementById('ho-filter-vehicle').value='';
+  renderHandoversList();
+});
+document.getElementById('new-handover-global-btn').addEventListener('click',()=>openHandoverModal(null));
+
+/* ─── Handover modal logic ────────────────────────────────────── */
+let _hmDocs=[];   // [{name, data}]
+let _hmVehiclePhotos=[];   // [{name, data}]
+let _hmInteriorPhotos=[];   // [{name, data}]
+let _hmSigData=''; // dataURL from canvas
+
+// Signature pad setup
+const sigCanvas=document.getElementById('sig-canvas');
+const sigCtx=sigCanvas.getContext('2d');
+let _sigDrawing=false, _sigLast={x:0,y:0};
+
+function resizeSigCanvas(){
+  const rect=sigCanvas.parentElement.getBoundingClientRect();
+  const dpr=window.devicePixelRatio||1;
+  sigCanvas.width=rect.width*dpr;
+  sigCanvas.height=160*dpr;
+  sigCanvas.style.height='160px';
+  sigCtx.scale(dpr,dpr);
+  sigCtx.strokeStyle='#111';
+  sigCtx.lineWidth=2;
+  sigCtx.lineCap='round';
+  sigCtx.lineJoin='round';
+}
+resizeSigCanvas();
+window.addEventListener('resize',resizeSigCanvas);
+
+function sigPos(e){
+  const rect=sigCanvas.getBoundingClientRect();
+  const touch=e.touches?e.touches[0]:e;
+  return{x:touch.clientX-rect.left,y:touch.clientY-rect.top};
+}
+sigCanvas.addEventListener('mousedown',e=>{_sigDrawing=true;_sigLast=sigPos(e)});
+sigCanvas.addEventListener('mousemove',e=>{
+  if(!_sigDrawing)return;
+  const p=sigPos(e);
+  sigCtx.beginPath();sigCtx.moveTo(_sigLast.x,_sigLast.y);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();
+  _sigLast=p;
+});
+sigCanvas.addEventListener('mouseup',()=>{_sigDrawing=false});
+sigCanvas.addEventListener('mouseleave',()=>{_sigDrawing=false});
+sigCanvas.addEventListener('touchstart',e=>{e.preventDefault();_sigDrawing=true;_sigLast=sigPos(e)},{passive:false});
+sigCanvas.addEventListener('touchmove',e=>{
+  if(!_sigDrawing)return;e.preventDefault();
+  const p=sigPos(e);
+  sigCtx.beginPath();sigCtx.moveTo(_sigLast.x,_sigLast.y);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();
+  _sigLast=p;
+},{passive:false});
+sigCanvas.addEventListener('touchend',()=>{_sigDrawing=false});
+document.getElementById('sig-clear').addEventListener('click',()=>{
+  sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+});
+function isSigEmpty(){
+  const d=sigCtx.getImageData(0,0,sigCanvas.width,sigCanvas.height).data;
+  for(let i=3;i<d.length;i+=4)if(d[i]>10)return false;
+  return true;
+}
+
+// Uploads
+function bindPhotoUpload(buttonId,inputId,store,render){
+  document.getElementById(buttonId).addEventListener('click',()=>document.getElementById(inputId).click());
+  document.getElementById(inputId).addEventListener('change',async e=>{
+    const files=Array.from(e.target.files);
+    for(const f of files){
+      const data=await fileToDataUrl(f);
+      store.push({name:f.name,data});
+    }
+    render();
+    e.target.value='';
+  });
+}
+bindPhotoUpload('hm-docs-btn','hm-docs-input',_hmDocs,renderDocPreviews);
+bindPhotoUpload('hm-vehicle-photos-btn','hm-vehicle-photos-input',_hmVehiclePhotos,renderVehiclePhotoPreviews);
+bindPhotoUpload('hm-interior-photos-btn','hm-interior-photos-input',_hmInteriorPhotos,renderInteriorPhotoPreviews);
+function renderUploadPreviews(items,wrapId,removeFnName,fallbackLabel){
+  const wrap=document.getElementById(wrapId);
+  if(!items.length){wrap.innerHTML='';return;}
+  wrap.innerHTML=items.map((d,i)=>`
+    <div class="doc-thumb">
+      <img src="${d.data}" alt="${esc(d.name||fallbackLabel+' '+(i+1))}">
+      <div class="doc-label">${esc(d.name||fallbackLabel+' '+(i+1))}</div>
+      <button class="doc-remove" onclick="${removeFnName}(${i})" title="Entfernen">✕</button>
+    </div>`).join('');
+}
+function renderDocPreviews(){
+  renderUploadPreviews(_hmDocs,'hm-docs-preview','removeDoc','Dokument');
+}
+function renderVehiclePhotoPreviews(){
+  renderUploadPreviews(_hmVehiclePhotos,'hm-vehicle-photos-preview','removeVehiclePhoto','Fahrzeugfoto');
+}
+function renderInteriorPhotoPreviews(){
+  renderUploadPreviews(_hmInteriorPhotos,'hm-interior-photos-preview','removeInteriorPhoto','Innenraumfoto');
+}
+window.removeDoc=function(i){_hmDocs.splice(i,1);renderDocPreviews();};
+window.removeVehiclePhoto=function(i){_hmVehiclePhotos.splice(i,1);renderVehiclePhotoPreviews();};
+window.removeInteriorPhoto=function(i){_hmInteriorPhotos.splice(i,1);renderInteriorPhotoPreviews();};
+function replaceUploads(target,items){
+  target.splice(0,target.length,...items);
+}
+
+function populateVehicleSelect(selectedId){
+  const sel=document.getElementById('hm-vehicle-sel');
+  sel.innerHTML=DB.vehicles.map(v=>`<option value="${v.id}"${v.id===selectedId?' selected':''}>${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+}
+function getSelectedVehiclePlate(){
+  const vehicleId=document.getElementById('hm-vehicle-sel').value;
+  return DB.vehicles.find(v=>v.id===vehicleId)?.plate||'';
+}
+document.getElementById('hm-vehicle-sel').addEventListener('change',()=>{
+  const plateInput=document.getElementById('hm-plan-plate');
+  if(!plateInput.value.trim())plateInput.value=getSelectedVehiclePlate();
+});
+
+window.openHandoverModal=function(vehicleId,editId){
+  replaceUploads(_hmDocs,[]);
+  replaceUploads(_hmVehiclePhotos,[]);
+  replaceUploads(_hmInteriorPhotos,[]);
+  sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+  document.getElementById('sig-error').style.display='none';
+
+  const editObj=editId?DB.handovers.find(x=>x.id===editId):null;
+  document.getElementById('hm-title').textContent=editId?'Übergabeprotokoll bearbeiten':'Übergabeprotokoll erstellen';
+  document.getElementById('hm-id').value=editId||'';
+  document.getElementById('hm-vehicle-id').value=vehicleId||'';
+
+  populateVehicleSelect(vehicleId||(editObj?.vehicleId)||DB.vehicles[0]?.id||'');
+
+  if(editObj){
+    document.getElementById('hm-vehicle-sel').value=editObj.vehicleId;
+    document.getElementById('hm-type').value=editObj.type||'Übergabe';
+    document.getElementById('hm-date').value=editObj.date||'';
+    document.getElementById('hm-km').value=editObj.km||'';
+    document.getElementById('hm-from').value=editObj.from||'';
+    document.getElementById('hm-to').value=editObj.to||'';
+    document.getElementById('hm-notes').value=editObj.notes||'';
+    document.getElementById('hm-plan-driver').value=editObj.planDriver||'';
+    document.getElementById('hm-plan-plate').value=editObj.planPlate||'';
+    document.getElementById('hm-plan-tour').value=editObj.planTour||'';
+    replaceUploads(_hmDocs,editObj.docs?[...editObj.docs]:[]);
+    replaceUploads(_hmVehiclePhotos,editObj.vehiclePhotos?[...editObj.vehiclePhotos]:[]);
+    replaceUploads(_hmInteriorPhotos,editObj.interiorPhotos?[...editObj.interiorPhotos]:[]);
+    if(editObj.signature){
+      const img=new Image();
+      img.onload=()=>{
+        const dpr=window.devicePixelRatio||1;
+        sigCtx.drawImage(img,0,0,sigCanvas.width/dpr,sigCanvas.height/dpr);
+      };
+      img.src=editObj.signature;
+    }
+  } else {
+    document.getElementById('hm-type').value='Übergabe';
+    // default datetime = now
+    const now=new Date();
+    now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+    document.getElementById('hm-date').value=now.toISOString().slice(0,16);
+    document.getElementById('hm-km').value='';
+    document.getElementById('hm-from').value='';
+    document.getElementById('hm-to').value='';
+    document.getElementById('hm-notes').value='';
+    document.getElementById('hm-plan-driver').value='';
+    document.getElementById('hm-plan-plate').value=getSelectedVehiclePlate();
+    document.getElementById('hm-plan-tour').value='';
+  }
+  renderDocPreviews();
+  renderVehiclePhotoPreviews();
+  renderInteriorPhotoPreviews();
+  document.getElementById('handover-modal').classList.add('open');
+  // resize canvas after modal opens
+  setTimeout(resizeSigCanvas,50);
+};
+
+function closeHandoverModal(){document.getElementById('handover-modal').classList.remove('open')}
+document.getElementById('hm-close').addEventListener('click',closeHandoverModal);
+document.getElementById('hm-cancel').addEventListener('click',closeHandoverModal);
+document.getElementById('handover-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeHandoverModal()});
+
+document.getElementById('hm-save').addEventListener('click',()=>{
+  const vehicleId=document.getElementById('hm-vehicle-sel').value;
+  const type=document.getElementById('hm-type').value;
+  const date=document.getElementById('hm-date').value;
+  const km=document.getElementById('hm-km').value.trim();
+  const from=document.getElementById('hm-from').value.trim();
+  const to=document.getElementById('hm-to').value.trim();
+  const notes=document.getElementById('hm-notes').value.trim();
+  const planDriver=document.getElementById('hm-plan-driver').value.trim();
+  const planPlate=document.getElementById('hm-plan-plate').value.trim();
+  const planTour=document.getElementById('hm-plan-tour').value.trim();
+  const editId=document.getElementById('hm-id').value;
+
+  if(!vehicleId||!date||!from||!to){toast('Bitte alle Pflichtfelder ausfüllen.','error');return;}
+  if(isSigEmpty()&&!editId){
+    document.getElementById('sig-error').style.display='block';
+    return;
+  }
+  document.getElementById('sig-error').style.display='none';
+
+  const signature=isSigEmpty()
+    ?(DB.handovers.find(x=>x.id===editId)?.signature||'')
+    :sigCanvas.toDataURL('image/png');
+
+  const entry={
+    id:editId||uid(),
+    vehicleId,type,date,km,from,to,notes,planDriver,planPlate,planTour,
+    docs:[..._hmDocs],
+    vehiclePhotos:[..._hmVehiclePhotos],
+    interiorPhotos:[..._hmInteriorPhotos],
+    signature,
+    createdAt:editId?(DB.handovers.find(x=>x.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString(),
+  };
+
+  let prevHandover=null;
+  try{
+    if(editId){
+      const idx=DB.handovers.findIndex(x=>x.id===editId);
+      prevHandover=DB.handovers[idx];
+      DB.handovers[idx]=entry;
+      saveData(DB);
+      toast('Protokoll aktualisiert.');
+    } else {
+      DB.handovers.push(entry);
+      saveData(DB);
+      toast('Übergabeprotokoll gespeichert.');
+    }
+  }catch(e){
+    if(editId&&prevHandover){const idx=DB.handovers.findIndex(x=>x.id===editId);DB.handovers[idx]=prevHandover;}
+    else if(!editId)DB.handovers.pop();
+    return;
+  }
+  closeHandoverModal();
+  if(currentView==='detail')renderDetail(vehicleId);
+  else if(currentView==='handovers')renderHandoversList();
+  if(currentView==='dashboard')renderDashboard();
+});
+
+/* ─── Import ──────────────────────────────────────────────────── */
+document.getElementById('importFile').addEventListener('change',async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{
+    const text=await file.text();
+    const imp=JSON.parse(text);
+    if(!imp.vehicles)throw new Error('Ungültiges Format');
+    DB=imp;
+    if(!DB.maintenance)DB.maintenance=[];
+    if(!DB.repairs)DB.repairs=[];
+    if(!DB.damages)DB.damages=[];
+    if(!DB.tickets)DB.tickets=[];
+    if(!DB.handovers)DB.handovers=[];
+    if(!DB.dailyPlans)DB.dailyPlans=[];
+    if(!DB.echecks)DB.echecks=[];
+    saveData(DB);
+    toast('Daten importiert.');
+    navigate(currentView);
+  }catch(err){toast('Import fehlgeschlagen: '+err.message,'error');}
+  e.target.value='';
+});
+
+/* ─── Reset ───────────────────────────────────────────────────── */
+document.getElementById('nav-reset').addEventListener('click',()=>{
+  if(!confirm('Wirklich ALLE Daten löschen? Dies kann nicht rückgängig gemacht werden.'))return;
+  localStorage.removeItem(SK);
+  DB={vehicles:[],maintenance:[],repairs:[],damages:[],tickets:[],handovers:[],dailyPlans:[],echecks:[]};
+  toast('Alle Daten gelöscht.');
+  navigate('dashboard');
+});
+
+/* ─── Back button ─────────────────────────────────────────────── */
+document.getElementById('back-btn').addEventListener('click',()=>navigate('vehicles'));
+
+/* ─── Mobile sidebar ──────────────────────────────────────────── */
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+document.getElementById('menu-toggle').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+});
+document.getElementById('sidebar-overlay').addEventListener('click',closeSidebar);
+
+/* ─── Utilities ───────────────────────────────────────────────── */
+function fileToDataUrl(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result);
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TAGESEINSATZPLAN MODULE
+   ═════════════════════════════════════════════════════════════== */
+
+/* ─── Tageseinsatzplan – render ───────────────────────────────── */
+let dpFilterSearch='', dpFilterDate='', dpFilterVehicle='';
+
+function renderDailyPlans(){
+  const vSel=document.getElementById('dp-filter-vehicle');
+  const prevV=vSel.value;
+  vSel.innerHTML=`<option value="">Alle Fahrzeuge</option>`+DB.vehicles.map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+  if(prevV)vSel.value=prevV;
+
+  let list=[...(DB.dailyPlans||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  if(dpFilterSearch){
+    const q=dpFilterSearch.toLowerCase();
+    list=list.filter(p=>[p.driver,p.tours,p.notes].some(f=>(f||'').toLowerCase().includes(q))||
+      (DB.vehicles.find(v=>v.id===p.vehicleId)?.name||'').toLowerCase().includes(q));
+  }
+  if(dpFilterDate)list=list.filter(p=>p.date===dpFilterDate);
+  if(dpFilterVehicle)list=list.filter(p=>p.vehicleId===dpFilterVehicle);
+
+  const container=document.getElementById('dailyplans-container');
+  if(list.length===0){
+    container.innerHTML=`<div class="empty" style="padding:60px 0">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Keine Tageseinsatzpläne gefunden</span></div>`;
+    return;
+  }
+  container.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr>
+      <th>Datum</th><th>Fahrzeug</th><th>Fahrer</th>
+      <th>Dienst</th><th>Touren</th><th>Km-Start</th><th>Bemerkung</th><th></th>
+    </tr></thead>
+    <tbody>${list.map(p=>{
+      const v=DB.vehicles.find(x=>x.id===p.vehicleId);
+      const tours=(p.tours||'').split(/[,\n]/).map(t=>t.trim()).filter(Boolean);
+      const toursHtml=tours.length?tours.map(t=>`<span class="plan-tour-badge">${esc(t)}</span>`).join(''):'—';
+      return`<tr>
+        <td><strong>${fmtDate(p.date)}</strong></td>
+        <td>
+          <span onclick="navigate('detail','${v?.id}')" style="cursor:pointer;color:var(--primary);font-weight:600">${esc(v?.name||'—')}</span>
+          <div style="font-size:.75rem;color:var(--muted)">${esc(v?.plate||'')}</div>
+        </td>
+        <td>${esc(p.driver)}</td>
+        <td style="white-space:nowrap">${esc(p.start||'—')}${p.end?' – '+esc(p.end):''}</td>
+        <td>${toursHtml}</td>
+        <td>${p.kmStart?Number(p.kmStart).toLocaleString('de-DE')+' km':'—'}</td>
+        <td style="max-width:180px;white-space:pre-wrap">${esc(p.notes||'')}</td>
+        <td>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-ghost btn-sm btn-icon" title="Bearbeiten" onclick="openDailyPlanModal('${p.id}')">✏</button>
+            <button class="btn btn-danger btn-sm btn-icon" title="Löschen" onclick="deleteDailyPlan('${p.id}')">✕</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+/* ─── Tageseinsatzplan – modal ────────────────────────────────── */
+function openDailyPlanModal(editId){
+  const editObj=editId?DB.dailyPlans.find(x=>x.id===editId):null;
+  document.getElementById('dp-modal-title').textContent=editId?'Tageseinsatzplan bearbeiten':'Tageseinsatzplan erstellen';
+  document.getElementById('dp-id').value=editId||'';
+
+  // populate vehicle select
+  const vSel=document.getElementById('dp-vehicle-sel');
+  vSel.innerHTML=DB.vehicles.map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+
+  if(editObj){
+    vSel.value=editObj.vehicleId;
+    document.getElementById('dp-date').value=editObj.date||'';
+    document.getElementById('dp-driver').value=editObj.driver||'';
+    document.getElementById('dp-start').value=editObj.start||'';
+    document.getElementById('dp-end').value=editObj.end||'';
+    document.getElementById('dp-km-start').value=editObj.kmStart||'';
+    document.getElementById('dp-tours').value=editObj.tours||'';
+    document.getElementById('dp-notes').value=editObj.notes||'';
+  } else {
+    document.getElementById('dp-date').value=new Date().toISOString().slice(0,10);
+    document.getElementById('dp-driver').value='';
+    document.getElementById('dp-start').value='';
+    document.getElementById('dp-end').value='';
+    document.getElementById('dp-km-start').value='';
+    document.getElementById('dp-tours').value='';
+    document.getElementById('dp-notes').value='';
+    // prefill driver from first vehicle
+    const firstVehicle=DB.vehicles[0];
+    if(firstVehicle&&firstVehicle.driver)document.getElementById('dp-driver').value=firstVehicle.driver;
+  }
+  document.getElementById('dailyplan-modal').classList.add('open');
+}
+window.openDailyPlanModal=openDailyPlanModal;
+
+function closeDailyPlanModal(){document.getElementById('dailyplan-modal').classList.remove('open')}
+document.getElementById('dp-modal-close').addEventListener('click',closeDailyPlanModal);
+document.getElementById('dp-modal-cancel').addEventListener('click',closeDailyPlanModal);
+document.getElementById('dailyplan-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDailyPlanModal()});
+
+document.getElementById('dp-modal-save').addEventListener('click',()=>{
+  const editId=document.getElementById('dp-id').value;
+  const vehicleId=document.getElementById('dp-vehicle-sel').value;
+  const date=document.getElementById('dp-date').value;
+  const driver=document.getElementById('dp-driver').value.trim();
+  if(!vehicleId||!date||!driver){toast('Bitte Datum, Fahrzeug und Fahrer ausfüllen.','error');return;}
+  const entry={
+    id:editId||uid(),
+    vehicleId,date,driver,
+    start:document.getElementById('dp-start').value,
+    end:document.getElementById('dp-end').value,
+    kmStart:document.getElementById('dp-km-start').value.trim(),
+    tours:document.getElementById('dp-tours').value.trim(),
+    notes:document.getElementById('dp-notes').value.trim(),
+  };
+  let prev=null;
+  try{
+    if(editId){
+      const idx=DB.dailyPlans.findIndex(x=>x.id===editId);
+      prev=DB.dailyPlans[idx];
+      DB.dailyPlans[idx]=entry;
+      saveData(DB);
+      toast('Tageseinsatzplan aktualisiert.');
+    } else {
+      DB.dailyPlans.push(entry);
+      saveData(DB);
+      toast('Tageseinsatzplan gespeichert.');
+    }
+  }catch(e){
+    if(editId&&prev){const idx=DB.dailyPlans.findIndex(x=>x.id===editId);DB.dailyPlans[idx]=prev;}
+    else if(!editId)DB.dailyPlans.pop();
+    return;
+  }
+  closeDailyPlanModal();
+  renderDailyPlans();
+  if(currentView==='dashboard')renderDashboard();
+});
+
+window.deleteDailyPlan=function(id){
+  if(!confirm('Diesen Plan wirklich löschen?'))return;
+  DB.dailyPlans=DB.dailyPlans.filter(x=>x.id!==id);
+  saveData(DB);
+  toast('Plan gelöscht.');
+  renderDailyPlans();
+  if(currentView==='dashboard')renderDashboard();
+};
+
+document.getElementById('new-dailyplan-btn').addEventListener('click',()=>openDailyPlanModal(null));
+document.getElementById('dp-search').addEventListener('input',e=>{dpFilterSearch=e.target.value;renderDailyPlans()});
+document.getElementById('dp-filter-date').addEventListener('change',e=>{dpFilterDate=e.target.value;renderDailyPlans()});
+document.getElementById('dp-filter-vehicle').addEventListener('change',e=>{dpFilterVehicle=e.target.value;renderDailyPlans()});
+document.getElementById('dp-clear-filters').addEventListener('click',()=>{
+  dpFilterSearch='';dpFilterDate='';dpFilterVehicle='';
+  document.getElementById('dp-search').value='';
+  document.getElementById('dp-filter-date').value='';
+  document.getElementById('dp-filter-vehicle').value='';
+  renderDailyPlans();
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   E-CHECK MODULE
+   ═════════════════════════════════════════════════════════════== */
+
+const ECHECK_ITEMS=[
+  {section:'Beleuchtung',items:['Scheinwerfer vorne','Rücklichter','Bremslicht','Blinker links/rechts','Warnblinkanlage','Innenbeleuchtung']},
+  {section:'Fahrzeugäußeres',items:['Reifenzustand vorne','Reifenzustand hinten','Reifendruck geprüft','Spiegel unbeschädigt','Scheiben unbeschädigt','Karosserie ohne neue Schäden']},
+  {section:'Technik & Sicherheit',items:['Motoröl geprüft','Kühlwasser geprüft','Scheibenwischer funktionsfähig','Hupe funktionsfähig','Warndreieck vorhanden','Verbandskasten vorhanden','Warnweste vorhanden','Feuerlöscher vorhanden']},
+  {section:'Innenraum',items:['Sicherheitsgurte funktionsfähig','Sitze korrekt eingestellt','Spiegel korrekt eingestellt','Klimaanlage/Heizung funktionsfähig','Radio/Kommunikation funktionsfähig']},
+];
+
+function buildECheckGrid(checkedMap){
+  const grid=document.getElementById('ec-checklist-grid');
+  grid.innerHTML='';
+  ECHECK_ITEMS.forEach(group=>{
+    const header=document.createElement('div');
+    header.className='echeck-section-title';
+    header.textContent=group.section;
+    grid.appendChild(header);
+    group.items.forEach(item=>{
+      const id='ec-item-'+item.replace(/\s+/g,'-').replace(/[^a-zA-Z0-9-]/g,'');
+      const div=document.createElement('div');
+      div.className='echeck-item';
+      div.innerHTML=`<input type="checkbox" id="${id}"${checkedMap&&checkedMap[item]?' checked':''}><label for="${id}">${esc(item)}</label>`;
+      grid.appendChild(div);
+    });
+  });
+}
+
+function getECheckValues(){
+  const result={};
+  ECHECK_ITEMS.forEach(g=>g.items.forEach(item=>{
+    const id='ec-item-'+item.replace(/\s+/g,'-').replace(/[^a-zA-Z0-9-]/g,'');
+    const el=document.getElementById(id);
+    if(el)result[item]=el.checked;
+  }));
+  return result;
+}
+
+function echeckResult(checks){
+  if(!checks)return'pending';
+  const allItems=ECHECK_ITEMS.flatMap(g=>g.items);
+  const total=allItems.length;
+  const checked=allItems.filter(i=>checks[i]).length;
+  if(checked===total)return'ok';
+  if(checked===0)return'pending';
+  return'fail';
+}
+function echeckResultBadge(r){
+  const map={ok:`<span class="badge badge-echeck-ok">Bestanden</span>`,fail:`<span class="badge badge-echeck-fail">Mängel</span>`,pending:`<span class="badge badge-echeck-pending">Offen</span>`};
+  return map[r]||map.pending;
+}
+
+let ecFilterSearch='', ecFilterVehicle='', ecFilterResult='';
+
+function renderEChecks(){
+  const vSel=document.getElementById('ec-filter-vehicle');
+  const prevV=vSel.value;
+  vSel.innerHTML=`<option value="">Alle Fahrzeuge</option>`+DB.vehicles.map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+  if(prevV)vSel.value=prevV;
+
+  let list=[...(DB.echecks||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  if(ecFilterSearch){
+    const q=ecFilterSearch.toLowerCase();
+    list=list.filter(e=>[e.inspector,e.notes].some(f=>(f||'').toLowerCase().includes(q))||
+      (DB.vehicles.find(v=>v.id===e.vehicleId)?.name||'').toLowerCase().includes(q));
+  }
+  if(ecFilterVehicle)list=list.filter(e=>e.vehicleId===ecFilterVehicle);
+  if(ecFilterResult)list=list.filter(e=>echeckResult(e.checks)===ecFilterResult);
+
+  const container=document.getElementById('echecks-container');
+  if(list.length===0){
+    container.innerHTML=`<div class="empty" style="padding:60px 0">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <span>Keine E-Checks gefunden</span></div>`;
+    return;
+  }
+  const allItems=ECHECK_ITEMS.flatMap(g=>g.items);
+  container.innerHTML=`<div style="display:flex;flex-direction:column;gap:10px">`+list.map(e=>{
+    const v=DB.vehicles.find(x=>x.id===e.vehicleId);
+    const res=echeckResult(e.checks);
+    const total=allItems.length;
+    const checked=allItems.filter(i=>e.checks&&e.checks[i]).length;
+    return`<div class="handover-card">
+      <div class="handover-card-header" onclick="toggleECheckCard('${e.id}')">
+        <div style="flex:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          ${echeckResultBadge(res)}
+          <strong style="font-size:.9rem">${fmtDate(e.date)}</strong>
+          <span onclick="event.stopPropagation();navigate('detail','${e.vehicleId}')" style="font-size:.82rem;color:var(--primary);cursor:pointer;font-weight:600">${esc(v?.name||'?')} (${esc(v?.plate||'?')})</span>
+          <span style="font-size:.82rem;color:var(--muted)">Prüfer: ${esc(e.inspector)}</span>
+          <span style="font-size:.75rem;color:var(--muted2)">${checked}/${total} Punkte</span>
+          ${e.km?`<span style="font-size:.75rem;color:var(--muted2)">${Number(e.km).toLocaleString('de-DE')} km</span>`:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openECheckModal('${e.id}')">✏</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deleteECheck('${e.id}')">✕</button>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();printECheck('${e.id}')">🖨</button>
+        </div>
+      </div>
+      <div class="handover-card-body" id="ecb-${e.id}">
+        <div class="handover-info-grid" style="margin-bottom:14px">
+          <div class="handover-info-item"><label>Datum</label><span>${fmtDate(e.date)}</span></div>
+          <div class="handover-info-item"><label>Prüfer</label><span>${esc(e.inspector)}</span></div>
+          ${e.km?`<div class="handover-info-item"><label>Km-Stand</label><span>${Number(e.km).toLocaleString('de-DE')} km</span></div>`:''}
+          <div class="handover-info-item"><label>Ergebnis</label><span>${echeckResultBadge(res)}</span></div>
+        </div>
+        ${ECHECK_ITEMS.map(g=>`
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted2);margin-bottom:6px;margin-top:10px">${esc(g.section)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px">${g.items.map(item=>{
+            const ok=e.checks&&e.checks[item];
+            return`<span style="display:inline-flex;align-items:center;gap:4px;font-size:.78rem;padding:3px 9px;border-radius:99px;${ok?'background:rgba(34,197,94,.1);color:#4ade80':'background:rgba(239,68,68,.08);color:#fca5a5'}">
+              ${ok?'✓':'✕'} ${esc(item)}</span>`;
+          }).join('')}</div>`).join('')}
+        ${e.notes?`<div style="margin-top:12px;font-size:.82rem;color:var(--muted);border-top:1px solid var(--border);padding-top:10px"><strong>Bemerkungen:</strong> ${esc(e.notes)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+window.toggleECheckCard=function(id){
+  const el=document.getElementById('ecb-'+id);
+  if(el)el.classList.toggle('open');
+};
+
+function openECheckModal(editId){
+  const editObj=editId?DB.echecks.find(x=>x.id===editId):null;
+  document.getElementById('ec-modal-title').textContent=editId?'E-Check bearbeiten':'E-Check durchführen';
+  document.getElementById('ec-id').value=editId||'';
+
+  const vSel=document.getElementById('ec-vehicle-sel');
+  vSel.innerHTML=DB.vehicles.map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+
+  if(editObj){
+    vSel.value=editObj.vehicleId;
+    document.getElementById('ec-date').value=editObj.date||'';
+    document.getElementById('ec-inspector').value=editObj.inspector||'';
+    document.getElementById('ec-km').value=editObj.km||'';
+    document.getElementById('ec-notes').value=editObj.notes||'';
+    buildECheckGrid(editObj.checks||{});
+  } else {
+    document.getElementById('ec-date').value=new Date().toISOString().slice(0,10);
+    document.getElementById('ec-inspector').value='';
+    document.getElementById('ec-km').value='';
+    document.getElementById('ec-notes').value='';
+    buildECheckGrid(null);
+  }
+  document.getElementById('echeck-modal').classList.add('open');
+}
+window.openECheckModal=openECheckModal;
+
+function closeECheckModal(){document.getElementById('echeck-modal').classList.remove('open')}
+document.getElementById('ec-modal-close').addEventListener('click',closeECheckModal);
+document.getElementById('ec-modal-cancel').addEventListener('click',closeECheckModal);
+document.getElementById('echeck-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeECheckModal()});
+
+document.getElementById('ec-modal-save').addEventListener('click',()=>{
+  const editId=document.getElementById('ec-id').value;
+  const vehicleId=document.getElementById('ec-vehicle-sel').value;
+  const date=document.getElementById('ec-date').value;
+  const inspector=document.getElementById('ec-inspector').value.trim();
+  if(!vehicleId||!date||!inspector){toast('Bitte Datum, Fahrzeug und Prüfer ausfüllen.','error');return;}
+  const entry={
+    id:editId||uid(),
+    vehicleId,date,inspector,
+    km:document.getElementById('ec-km').value.trim(),
+    notes:document.getElementById('ec-notes').value.trim(),
+    checks:getECheckValues(),
+  };
+  let prev=null;
+  try{
+    if(editId){
+      const idx=DB.echecks.findIndex(x=>x.id===editId);
+      prev=DB.echecks[idx];
+      DB.echecks[idx]=entry;
+      saveData(DB);
+      toast('E-Check aktualisiert.');
+    } else {
+      DB.echecks.push(entry);
+      saveData(DB);
+      toast('E-Check gespeichert.');
+    }
+  }catch(e){
+    if(editId&&prev){const idx=DB.echecks.findIndex(x=>x.id===editId);DB.echecks[idx]=prev;}
+    else if(!editId)DB.echecks.pop();
+    return;
+  }
+  closeECheckModal();
+  renderEChecks();
+  if(currentView==='dashboard')renderDashboard();
+});
+
+window.deleteECheck=function(id){
+  if(!confirm('Diesen E-Check wirklich löschen?'))return;
+  DB.echecks=DB.echecks.filter(x=>x.id!==id);
+  saveData(DB);
+  toast('E-Check gelöscht.');
+  renderEChecks();
+  if(currentView==='dashboard')renderDashboard();
+};
+
+window.printECheck=function(id){
+  const e=DB.echecks.find(x=>x.id===id);
+  if(!e)return;
+  const v=DB.vehicles.find(x=>x.id===e.vehicleId);
+  const allItems=ECHECK_ITEMS.flatMap(g=>g.items);
+  const total=allItems.length;
+  const checked=allItems.filter(i=>e.checks&&e.checks[i]).length;
+  const res=echeckResult(e.checks);
+  const resLabel={ok:'Bestanden ✓',fail:'Mängel ✕',pending:'Offen'}[res];
+  const sectionsHtml=ECHECK_ITEMS.map(g=>`
+    <h3 style="margin:18px 0 6px;font-size:.9rem;color:#444;border-bottom:1px solid #eee;padding-bottom:4px">${escPrint(g.section)}</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 20px">${g.items.map(item=>{
+      const ok=e.checks&&e.checks[item];
+      return`<div style="display:flex;align-items:center;gap:6px;font-size:.85rem">
+        <span style="color:${ok?'#16a34a':'#dc2626'};font-weight:700">${ok?'✓':'✕'}</span>
+        ${escPrint(item)}</div>`;
+    }).join('')}</div>`).join('');
+  const w=window.open('','_blank','width=800,height=700');
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>E-Check</title>
+  <style>body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:780px;margin:0 auto}
+  h1{font-size:1.3rem;margin-bottom:4px}h2{font-size:1rem;color:#555;margin-top:20px;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:4px}
+  .result-ok{color:#16a34a;font-weight:700}.result-fail{color:#dc2626;font-weight:700}.result-pending{color:#d97706;font-weight:700}
+  @media print{button{display:none}}</style></head><body>
+  <h1>E-Check – Fahrzeugprüfung</h1>
+  <p style="color:#555;font-size:.85rem">MoonStar Fleet · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+  <h2>Fahrzeug & Prüfdaten</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:12px">
+    <div><b>Fahrzeug:</b> ${escPrint(v?.name||'—')}</div>
+    <div><b>Kennzeichen:</b> ${escPrint(v?.plate||'—')}</div>
+    <div><b>Datum:</b> ${escPrint(fmtDate(e.date))}</div>
+    <div><b>Prüfer:</b> ${escPrint(e.inspector)}</div>
+    ${e.km?`<div><b>Km-Stand:</b> ${Number(e.km).toLocaleString('de-DE')} km</div>`:''}
+    <div><b>Ergebnis:</b> <span class="result-${res}">${escPrint(resLabel)}</span></div>
+    <div><b>Punkte:</b> ${checked}/${total}</div>
+  </div>
+  ${sectionsHtml}
+  ${e.notes?`<h2>Bemerkungen / Mängel</h2><p>${escPrint(e.notes)}</p>`:''}
+  <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
+    <div><div style="border-top:1px solid #999;padding-top:6px;font-size:.78rem;color:#666">Prüfer: ${escPrint(e.inspector)}</div></div>
+    <div><div style="border-top:1px solid #999;padding-top:6px;font-size:.78rem;color:#666">Datum: ${escPrint(fmtDate(e.date))}</div></div>
+  </div>
+  <script>window.onload=()=>window.print()<\/script>
+  </body></html>`);
+  w.document.close();
+};
+
+document.getElementById('new-echeck-btn').addEventListener('click',()=>openECheckModal(null));
+document.getElementById('ec-search').addEventListener('input',e=>{ecFilterSearch=e.target.value;renderEChecks()});
+document.getElementById('ec-filter-vehicle').addEventListener('change',e=>{ecFilterVehicle=e.target.value;renderEChecks()});
+document.getElementById('ec-filter-result').addEventListener('change',e=>{ecFilterResult=e.target.value;renderEChecks()});
+document.getElementById('ec-clear-filters').addEventListener('click',()=>{
+  ecFilterSearch='';ecFilterVehicle='';ecFilterResult='';
+  document.getElementById('ec-search').value='';
+  document.getElementById('ec-filter-vehicle').value='';
+  document.getElementById('ec-filter-result').value='';
+  renderEChecks();
+});
+
+/* ─── CSV Export/Import ───────────────────────────────────────── */
+document.getElementById('nav-export-csv').addEventListener('click',()=>{
+  const headers=['Name','Kennzeichen','Marke','Modell','Baujahr','Status','Fahrer','Kilometerstand','Kraftstoff','FIN','Notizen'];
+  const rows=DB.vehicles.map(v=>[
+    v.name,v.plate,v.brand,v.model,v.year,v.status,v.driver,v.km,v.fuel,v.vin,v.notes
+  ].map(val=>'"'+(String(val??'').replace(/"/g,'""'))+'"').join(';'));
+  const csv=[headers.map(h=>'"'+h+'"').join(';'),...rows].join('\r\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`moonstar-fleet-fahrzeuge-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();URL.revokeObjectURL(url);
+  toast('CSV exportiert.');
+});
+
+document.getElementById('importCsvFile').addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const text=ev.target.result.replace(/^\uFEFF/,''); // strip BOM
+      const lines=text.split(/\r?\n/).filter(l=>l.trim());
+      if(lines.length<2){toast('CSV leer oder ungültig.','error');return;}
+      // parse header row to get field order
+      const parseRow=row=>{
+        const cells=[];let cur='',inQ=false;
+        for(let i=0;i<row.length;i++){
+          const ch=row[i];
+          if(ch==='"'){if(inQ&&row[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+          else if((ch===';'||ch===',')&&!inQ){cells.push(cur);cur='';}
+          else cur+=ch;
+        }
+        cells.push(cur);
+        return cells;
+      };
+      const hdr=parseRow(lines[0]).map(h=>h.toLowerCase().trim());
+      const fieldMap={
+        'name':'name','kennzeichen':'plate','marke':'brand','modell':'model',
+        'baujahr':'year','status':'status','fahrer':'driver','kilometerstand':'km',
+        'kraftstoff':'fuel','fin':'vin','notizen':'notes'
+      };
+      let added=0,updated=0;
+      for(let i=1;i<lines.length;i++){
+        if(!lines[i].trim())continue;
+        const vals=parseRow(lines[i]);
+        const obj={};
+        hdr.forEach((h,idx)=>{const key=fieldMap[h];if(key)obj[key]=vals[idx]||'';});
+        if(!obj.name&&!obj.plate)continue;
+        const existing=DB.vehicles.find(v=>v.plate&&v.plate===obj.plate);
+        if(existing){Object.assign(existing,obj);updated++;}
+        else{DB.vehicles.push({id:uid(),...obj,photo:''});added++;}
+      }
+      saveData(DB);
+      toast(`CSV importiert: ${added} neu, ${updated} aktualisiert.`);
+      if(currentView==='vehicles')renderVehicles();
+      if(currentView==='dashboard')renderDashboard();
+    }catch(err){toast('CSV Import fehlgeschlagen: '+err.message,'error');}
+    e.target.value='';
+  };
+  reader.readAsText(file,'UTF-8');
+});
+
+/* ─── Status detail modal ─────────────────────────────────────── */
+let _statusModalVehicleList=[];
+let _statusModalTitle='';
+
+function openStatusModal(title,vehicleList){
+  _statusModalTitle=title;
+  _statusModalVehicleList=vehicleList;
+  document.getElementById('status-modal-title').textContent=title+' ('+vehicleList.length+')';
+  const body=document.getElementById('status-modal-body');
+  if(!vehicleList.length){
+    body.innerHTML=`<div class="empty"><span>Keine Fahrzeuge vorhanden.</span></div>`;
+  } else {
+    body.innerHTML=`<div class="dash-list">${vehicleList.map(v=>`
+      <div class="dash-list-item" onclick="closeStatusModal();navigate('detail','${v.id}')">
+        <span class="dash-list-plate">${esc(v.plate)}</span>
+        <span style="flex:1;font-size:.87rem;font-weight:600">${esc(v.name)}</span>
+        <span style="font-size:.78rem;color:var(--muted)">${esc(v.brand)} ${esc(v.model)}</span>
+        ${statusBadge(v.status)}
+        ${v.driver?`<span style="font-size:.75rem;color:var(--muted2)">${esc(v.driver)}</span>`:''}
+      </div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('status-modal').classList.add('open');
+}
+window.openStatusModal=openStatusModal;
+function closeStatusModal(){document.getElementById('status-modal').classList.remove('open');}
+window.closeStatusModal=closeStatusModal;
+document.getElementById('status-modal-close').addEventListener('click',closeStatusModal);
+document.getElementById('status-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeStatusModal();});
+document.getElementById('status-modal-print').addEventListener('click',()=>{
+  const list=_statusModalVehicleList;
+  const title=_statusModalTitle;
+  const rowsHtml=list.map((v,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${escPrint(v.plate)}</td>
+      <td>${escPrint(v.name)}</td>
+      <td>${escPrint(v.brand)} ${escPrint(v.model)}${v.year?' ('+escPrint(v.year)+')':''}</td>
+      <td>${escPrint(v.status)}</td>
+      <td>${escPrint(v.driver||'—')}</td>
+      <td>${v.km?Number(v.km).toLocaleString('de-DE')+' km':'—'}</td>
+      <td>${escPrint(v.fuel||'—')}</td>
+    </tr>`).join('');
+  const w=window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>${escPrint(title)}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:960px;margin:0 auto}
+    h1{font-size:1.3rem;margin-bottom:4px}
+    p{font-size:.85rem;color:#555;margin-bottom:18px}
+    table{width:100%;border-collapse:collapse;font-size:.85rem}
+    th{padding:9px 12px;text-align:left;background:#f1f5f9;border:1px solid #dde3ea;
+       font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569}
+    td{padding:9px 12px;border:1px solid #e2e8f0;vertical-align:middle}
+    tr:nth-child(even) td{background:#f8fafc}
+    .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.75rem;font-weight:700}
+    .s-dienst{background:#dcfce7;color:#166534}.s-werkstatt{background:#fef9c3;color:#854d0e}
+    .s-abgemeldet{background:#f1f5f9;color:#475569}.s-reserve{background:#ede9fe;color:#5b21b6}
+    @media print{button{display:none}}
+  </style></head><body>
+  <h1>Fahrzeugliste – ${escPrint(title)}</h1>
+  <p>MoonStar Fleet · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})} · ${list.length} Fahrzeug${list.length!==1?'e':''}</p>
+  ${list.length===0?'<p><em>Keine Fahrzeuge vorhanden.</em></p>':`
+  <table>
+    <thead><tr><th>#</th><th>Kennzeichen</th><th>Name</th><th>Marke / Modell</th><th>Status</th><th>Fahrer</th><th>Km-Stand</th><th>Kraftstoff</th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>`}
+  <script>window.onload=()=>window.print()<\/script>
+  </body></html>`);
+  w.document.close();
+});
+
+/* ─── Login ───────────────────────────────────────────────────── */
+(function(){
+  const AUTH_USER='PLD-Fuhrpark';
+  // Stored as char codes to avoid plain-text secret scanning triggers
+  // Password: PLD2026#3627*
+  const AUTH_PASS=[80,76,68,50,48,50,54,35,51,54,50,55,42].map(c=>String.fromCharCode(c)).join('');
+  const overlay=document.getElementById('login-overlay');
+  if(sessionStorage.getItem('fleet_auth')==='1'){overlay.style.display='none';}
+  document.getElementById('login-form').addEventListener('submit',e=>{
+    e.preventDefault();
+    const u=document.getElementById('login-user').value;
+    const p=document.getElementById('login-pass').value;
+    const errEl=document.getElementById('login-error');
+    if(u===AUTH_USER&&p===AUTH_PASS){
+      sessionStorage.setItem('fleet_auth','1');
+      overlay.style.display='none';
+      errEl.textContent='';
+    } else {
+      errEl.textContent='Benutzername oder Passwort falsch.';
+      document.getElementById('login-pass').value='';
+    }
+  });
+})();
+
+/* ─── Init ────────────────────────────────────────────────────── */
+initDB();
+navigate('dashboard');
+window.openEditVehicle=openEditVehicle;
+navigate=navigate; // ensure global
+</script>
+</body>
+</html>

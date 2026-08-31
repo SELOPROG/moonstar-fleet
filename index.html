@@ -1174,9 +1174,15 @@ tr:hover td{background:rgba(255,255,255,.025)}
   <div class="modal" style="max-width:640px">
     <div class="modal-header">
       <span class="modal-title" id="status-modal-title">Fahrzeuge</span>
-      <button class="btn btn-icon btn-ghost" id="status-modal-close">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-secondary btn-sm" id="status-modal-print">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Drucken
+        </button>
+        <button class="btn btn-icon btn-ghost" id="status-modal-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
     </div>
     <div class="modal-body" id="status-modal-body"></div>
   </div>
@@ -2911,7 +2917,12 @@ document.getElementById('importCsvFile').addEventListener('change',e=>{
 });
 
 /* ─── Status detail modal ─────────────────────────────────────── */
+let _statusModalVehicleList=[];
+let _statusModalTitle='';
+
 function openStatusModal(title,vehicleList){
+  _statusModalTitle=title;
+  _statusModalVehicleList=vehicleList;
   document.getElementById('status-modal-title').textContent=title+' ('+vehicleList.length+')';
   const body=document.getElementById('status-modal-body');
   if(!vehicleList.length){
@@ -2934,6 +2945,47 @@ function closeStatusModal(){document.getElementById('status-modal').classList.re
 window.closeStatusModal=closeStatusModal;
 document.getElementById('status-modal-close').addEventListener('click',closeStatusModal);
 document.getElementById('status-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeStatusModal();});
+document.getElementById('status-modal-print').addEventListener('click',()=>{
+  const list=_statusModalVehicleList;
+  const title=_statusModalTitle;
+  const rowsHtml=list.map((v,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${escPrint(v.plate)}</td>
+      <td>${escPrint(v.name)}</td>
+      <td>${escPrint(v.brand)} ${escPrint(v.model)}${v.year?' ('+escPrint(v.year)+')':''}</td>
+      <td>${escPrint(v.status)}</td>
+      <td>${escPrint(v.driver||'—')}</td>
+      <td>${v.km?Number(v.km).toLocaleString('de-DE')+' km':'—'}</td>
+      <td>${escPrint(v.fuel||'—')}</td>
+    </tr>`).join('');
+  const w=window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>${escPrint(title)}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:960px;margin:0 auto}
+    h1{font-size:1.3rem;margin-bottom:4px}
+    p{font-size:.85rem;color:#555;margin-bottom:18px}
+    table{width:100%;border-collapse:collapse;font-size:.85rem}
+    th{padding:9px 12px;text-align:left;background:#f1f5f9;border:1px solid #dde3ea;
+       font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569}
+    td{padding:9px 12px;border:1px solid #e2e8f0;vertical-align:middle}
+    tr:nth-child(even) td{background:#f8fafc}
+    .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.75rem;font-weight:700}
+    .s-dienst{background:#dcfce7;color:#166534}.s-werkstatt{background:#fef9c3;color:#854d0e}
+    .s-abgemeldet{background:#f1f5f9;color:#475569}.s-reserve{background:#ede9fe;color:#5b21b6}
+    @media print{button{display:none}}
+  </style></head><body>
+  <h1>Fahrzeugliste – ${escPrint(title)}</h1>
+  <p>MoonStar Fleet · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})} · ${list.length} Fahrzeug${list.length!==1?'e':''}</p>
+  ${list.length===0?'<p><em>Keine Fahrzeuge vorhanden.</em></p>':`
+  <table>
+    <thead><tr><th>#</th><th>Kennzeichen</th><th>Name</th><th>Marke / Modell</th><th>Status</th><th>Fahrer</th><th>Km-Stand</th><th>Kraftstoff</th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>`}
+  <script>window.onload=()=>window.print()<\/script>
+  </body></html>`);
+  w.document.close();
+});
 
 /* ─── Login ───────────────────────────────────────────────────── */
 (function(){

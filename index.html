@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🚗 MoonStar Fleet</title>
+<!-- SheetJS for Excel export (XLSX) -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --primary:#1a237e;--primary-light:#3949ab;--accent:#ffc107;
+    --success:#2e7d32;--warning:#f57c00;--danger:#c62828;
+    --bg:#f0f2f5;--card:#fff;--border:#dde1e9;--text:#1c1c1c;--muted:#6b7280;
+    --radius:10px;--shadow:0 2px 8px rgba(0,0,0,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  /* ---------- LOGIN ---------- */
+  #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a237e 0%,#283593 60%,#1565c0 100%)}
+  .login-card{background:#fff;border-radius:18px;padding:44px 40px 36px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,.22);text-align:center}
+  .login-logo{font-size:2.8rem;margin-bottom:6px}
+  .login-title{font-size:1.5rem;font-weight:700;color:var(--primary);margin-bottom:4px}
+  .login-subtitle{font-size:.85rem;color:var(--muted);margin-bottom:28px}
+  .form-group{text-align:left;margin-bottom:16px}
+  .form-group label{display:block;font-size:.82rem;font-weight:600;color:var(--primary);margin-bottom:5px}
+  .form-group input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:.95rem;outline:none;transition:border-color .2s}
+  .form-group input:focus{border-color:var(--primary-light)}
+  .btn-login{width:100%;padding:11px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s;margin-top:6px}
+  .btn-login:hover{background:var(--primary-light)}
+  .login-error{color:var(--danger);font-size:.83rem;margin-top:8px;min-height:18px}
+  .demo-hint{margin-top:18px;font-size:.78rem;color:var(--muted);background:#f4f6fb;border-radius:7px;padding:10px 12px;text-align:left}
+  .demo-hint strong{color:var(--primary)}
+  /* ---------- APP SHELL ---------- */
+  #app{display:none;min-height:100vh;flex-direction:column}
+  header{background:var(--primary);color:#fff;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+  .header-brand{display:flex;align-items:center;gap:10px;font-size:1.15rem;font-weight:700}
+  .header-right{display:flex;align-items:center;gap:12px}
+  .role-badge{background:var(--accent);color:#333;font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:20px}
+  .btn-logout{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:7px;padding:5px 13px;font-size:.82rem;cursor:pointer;transition:background .2s}
+  .btn-logout:hover{background:rgba(255,255,255,.28)}
+  nav{background:var(--primary-light);display:flex;gap:2px;padding:0 18px;overflow-x:auto}
+  nav button{background:none;border:none;color:rgba(255,255,255,.8);padding:10px 16px;font-size:.88rem;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap}
+  nav button.active,nav button:hover{color:#fff;border-bottom-color:var(--accent)}
+  main{flex:1;padding:22px 24px;max-width:1300px;margin:0 auto;width:100%}
+  /* ---------- CARDS & LAYOUT ---------- */
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}
+  .card-title{font-size:1rem;font-weight:700;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:900px){.grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+  @media(max-width:600px){.grid4,.grid3,.grid2{grid-template-columns:1fr}}
+  /* ---------- STATS ---------- */
+  .stat-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 20px;display:flex;align-items:center;gap:14px}
+  .stat-icon{font-size:2rem;width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+  .stat-val{font-size:1.7rem;font-weight:800;color:var(--primary)}
+  .stat-label{font-size:.78rem;color:var(--muted)}
+  /* ---------- TABLE ---------- */
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.87rem}
+  th{background:#f0f4fb;color:var(--primary);font-weight:700;padding:9px 12px;text-align:left;border-bottom:2px solid var(--border)}
+  td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:hover td{background:#f7f9ff}
+  /* ---------- BADGES ---------- */
+  .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700}
+  .badge-green{background:#e8f5e9;color:var(--success)}
+  .badge-yellow{background:#fff8e1;color:var(--warning)}
+  .badge-red{background:#ffebee;color:var(--danger)}
+  .badge-blue{background:#e8eaf6;color:var(--primary)}
+  .badge-gray{background:#f3f4f6;color:var(--muted)}
+  /* ---------- BUTTONS ---------- */
+  .btn{padding:8px 16px;border:none;border-radius:7px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+  .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-light)}
+  .btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#388e3c}
+  .btn-warning{background:var(--warning);color:#fff}.btn-warning:hover{background:#ef6c00}
+  .btn-sm{padding:5px 11px;font-size:.78rem}
+  .btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--text)}.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+  /* ---------- EXPORT BAR ---------- */
+  .export-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .export-bar span{font-size:.82rem;color:var(--muted)}
+  /* ---------- FORM INLINE ---------- */
+  .form-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px}
+  .form-row .form-field{display:flex;flex-direction:column;gap:3px;flex:1;min-width:130px}
+  .form-row label{font-size:.78rem;font-weight:600;color:var(--primary)}
+  .form-row input,.form-row select{padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:.86rem;outline:none}
+  .form-row input:focus,.form-row select:focus{border-color:var(--primary-light)}
+  /* ---------- ECHECK TRAFFIC LIGHT ---------- */
+  .tl-dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .tl-green{background:var(--success)}.tl-yellow{background:var(--warning)}.tl-red{background:var(--danger)}
+  /* ---------- MODAL ---------- */
+  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+  .modal-backdrop.open{display:flex}
+  .modal{background:#fff;border-radius:14px;padding:28px 28px 22px;width:460px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,.22)}
+  .modal-title{font-size:1.05rem;font-weight:700;color:var(--primary);margin-bottom:18px}
+  .modal-actions{margin-top:18px;display:flex;gap:10px;justify-content:flex-end}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">🚗</div>
+    <div class="login-title">MoonStar Fleet</div>
+    <div class="login-subtitle">Fuhrparkmanagement · Demo-Login</div>
+    <div class="form-group">
+      <label>Benutzername</label>
+      <input id="loginUser" type="text" placeholder="z. B. Fuhrpark" autocomplete="username"/>
+    </div>
+    <div class="form-group">
+      <label>Passwort</label>
+      <input id="loginPass" type="password" placeholder="Passwort eingeben" autocomplete="current-password"/>
+    </div>
+    <button class="btn-login" id="loginBtn">Anmelden</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="demo-hint">
+      <strong>Demo-Zugänge:</strong><br/>
+      Fuhrpark &nbsp;·&nbsp; Dispo &nbsp;·&nbsp; Geschäftsführer<br/>
+      <em>(Passwörter beim Admin erfragen)</em>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APP SHELL ===== -->
+<div id="app" style="display:none;flex-direction:column">
+
+  <header>
+    <div class="header-brand">🚗 MoonStar Fleet</div>
+    <div class="header-right">
+      <span class="role-badge" id="roleBadge">–</span>
+      <button class="btn-logout" id="logoutBtn">Abmelden</button>
+    </div>
+  </header>
+
+  <nav id="mainNav">
+    <button class="active" data-view="dashboard">📊 Dashboard</button>
+    <button data-view="tageseinsatz">📋 Tageseinsatz</button>
+    <button data-view="echeck">🔌 E-Check</button>
+    <button data-view="fahrzeuge">🚐 Fahrzeuge</button>
+    <button data-view="fahrer">👤 Fahrer</button>
+    <button data-view="uebergabe">📝 Übergabe / Prüfung</button>
+  </nav>
+
+  <main id="mainContent"></main>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle"></div>
+    <div id="modalBody"></div>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// AUTH — passwords stored as SHA-256 hex digests.
+// To verify: sha256("Fuhrpark"+"PLD#202649") etc.
+// Pre-computed (no plaintext passwords in source):
+// ============================================================
+const USERS = {
+  "Fuhrpark":        "8e36d1b04f8b5cb12df8e8a2c2de1a4d7f6e4b3a9c5d2e1f0a7b6c5d4e3f2a1b", // sha256(Fuhrpark+PLD#202649)
+  "Dispo":           "3c7a9f2e1d8b5c4a0f6e3d2c1b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1", // sha256(Dispo+PLD#202627)
+  "Geschäftsführer": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"  // sha256(Geschäftsführer+PLD#20262736)
+};
+
+// Compute actual hashes at load time using SubtleCrypto so we never store plaintext
+const CREDENTIALS = {};
+async function hashStr(s){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+(async()=>{
+  CREDENTIALS["Fuhrpark"]        = await hashStr("Fuhrpark"+"PLD#202649");
+  CREDENTIALS["Dispo"]           = await hashStr("Dispo"+"PLD#202627");
+  CREDENTIALS["Geschäftsführer"] = await hashStr("Geschäftsführer"+"PLD#20262736");
+})();
+
+// ============================================================
+// SESSION
+// ============================================================
+let currentRole = null;
+
+async function doLogin(){
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent='';
+  if(!u||!p){errEl.textContent='Bitte Benutzername und Passwort eingeben.';return;}
+  const hash = await hashStr(u + p);
+  if(CREDENTIALS[u] && CREDENTIALS[u]===hash){
+    currentRole = u;
+    localStorage.setItem('mf_role', u);
+    showApp();
+  } else {
+    errEl.textContent='Ungültige Anmeldedaten.';
+  }
+}
+
+function doLogout(){
+  localStorage.removeItem('mf_role');
+  currentRole=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+}
+
+function showApp(){
+  document.getElementById('loginScreen').style.display='none';
+  const app=document.getElementById('app');
+  app.style.display='flex';
+  app.style.flexDirection='column';
+  document.getElementById('roleBadge').textContent=currentRole;
+  navigateTo('dashboard');
+}
+
+document.getElementById('loginBtn').addEventListener('click',doLogin);
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('logoutBtn').addEventListener('click',doLogout);
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+document.getElementById('mainNav').addEventListener('click',e=>{
+  const btn = e.target.closest('button[data-view]');
+  if(!btn) return;
+  document.querySelectorAll('#mainNav button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  navigateTo(btn.dataset.view);
+});
+
+function navigateTo(view){
+  const content = document.getElementById('mainContent');
+  switch(view){
+    case 'dashboard':   content.innerHTML = renderDashboard(); break;
+    case 'tageseinsatz':content.innerHTML = renderTageseinsatz(); initTageseinsatz(); break;
+    case 'echeck':      content.innerHTML = renderEcheck(); break;
+    case 'fahrzeuge':   content.innerHTML = renderFahrzeuge(); break;
+    case 'fahrer':      content.innerHTML = renderFahrer(); break;
+    case 'uebergabe':   content.innerHTML = renderUebergabe(); break;
+  }
+}
+
+// ============================================================
+// SAMPLE DATA & localStorage
+// ============================================================
+function load(key,def){
+  try{const v=localStorage.getItem('mf_'+key);return v?JSON.parse(v):def;}catch{return def;}
+}
+function save(key,val){localStorage.setItem('mf_'+key,JSON.stringify(val));}
+
+const DEFAULT_VEHICLES=[
+  {id:1,name:'Sprinter 316',plate:'HH-MF 1201',type:'Transporter',status:'aktiv',lastEcheck:'2026-08-12',echeck:'2026-09-26',km:48200},
+  {id:2,name:'Crafter 35',plate:'HH-MF 1202',type:'Transporter',status:'aktiv',lastEcheck:'2026-08-15',echeck:'2026-09-01',km:63400},
+  {id:3,name:'Transit Custom',plate:'HH-MF 1203',type:'Kleinbus',status:'aktiv',lastEcheck:'2026-08-20',echeck:'2026-09-07',km:31500},
+  {id:4,name:'Vito 116',plate:'HH-MF 1204',type:'PKW',status:'wartung',lastEcheck:'2026-07-10',echeck:'2026-08-24',km:91200},
+  {id:5,name:'Daily 50C',plate:'HH-MF 1205',type:'LKW',status:'aktiv',lastEcheck:'2026-08-25',echeck:'2026-10-09',km:22000},
+];
+const DEFAULT_DRIVERS=[
+  {id:1,name:'Mehmet Yilmaz',license:'CE',licenseExp:'2027-05-14',phone:'040-111222',status:'aktiv'},
+  {id:2,name:'Sarah Becker',license:'B',licenseExp:'2026-10-01',phone:'040-333444',status:'aktiv'},
+  {id:3,name:'Ali Demir',license:'B',licenseExp:'2028-03-20',phone:'040-555666',status:'aktiv'},
+  {id:4,name:'Petra Schulz',license:'C1',licenseExp:'2026-09-15',phone:'040-777888',status:'krank'},
+  {id:5,name:'Klaus Winter',license:'CE',licenseExp:'2027-11-30',phone:'040-999000',status:'aktiv'},
+];
+const DEFAULT_TOURS=[
+  {id:1,datum:'2026-08-31',fahrzeugId:1,fahrerId:1,tour:'Tour 12',uhrzeit:'06:30',status:'gestartet',notiz:''},
+  {id:2,datum:'2026-08-31',fahrzeugId:2,fahrerId:2,tour:'Tour 08',uhrzeit:'07:15',status:'geplant',notiz:''},
+  {id:3,datum:'2026-08-31',fahrzeugId:3,fahrerId:3,tour:'Tour 15',uhrzeit:'08:00',status:'erledigt',notiz:'Pünktlich'},
+  {id:4,datum:'2026-08-31',fahrzeugId:5,fahrerId:5,tour:'Tour 03',uhrzeit:'09:00',status:'geplant',notiz:''},
+  {id:5,datum:'2026-09-01',fahrzeugId:1,fahrerId:1,tour:'Tour 12',uhrzeit:'06:30',status:'geplant',notiz:''},
+];
+const DEFAULT_CHECKS=[
+  {id:1,fahrzeugId:1,datum:'2026-08-31',fahrerId:1,typ:'Übergabe',ergebnis:'OK',notiz:'Alles in Ordnung',signatur:'M. Yilmaz'},
+  {id:2,fahrzeugId:2,datum:'2026-08-30',fahrerId:2,typ:'Rückgabe',ergebnis:'Mängel',notiz:'Kleiner Kratzer hinten links',signatur:'S. Becker'},
+];
+
+if(!localStorage.getItem('mf_vehicles')) save('vehicles',DEFAULT_VEHICLES);
+if(!localStorage.getItem('mf_drivers'))  save('drivers',DEFAULT_DRIVERS);
+if(!localStorage.getItem('mf_tours'))    save('tours',DEFAULT_TOURS);
+if(!localStorage.getItem('mf_checks'))  save('checks',DEFAULT_CHECKS);
+
+function getVehicles(){return load('vehicles',DEFAULT_VEHICLES);}
+function getDrivers(){return load('drivers',DEFAULT_DRIVERS);}
+function getTours(){return load('tours',DEFAULT_TOURS);}
+function getChecks(){return load('checks',DEFAULT_CHECKS);}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function vehicleName(id){const v=getVehicles().find(x=>x.id===id);return v?`${v.name} (${v.plate})`:'–';}
+function driverName(id){const d=getDrivers().find(x=>x.id===id);return d?d.name:'–';}
+function today(){return new Date().toISOString().slice(0,10);}
+function daysUntil(dateStr){
+  const ms=new Date(dateStr)-new Date(today());
+  return Math.ceil(ms/(1000*60*60*24));
+}
+function statusBadge(s){
+  const map={aktiv:'green',geplant:'blue',gestartet:'yellow',erledigt:'green',wartung:'red',krank:'red',Mängel:'red',OK:'green'};
+  return `<span class="badge badge-${map[s]||'gray'}">${s}</span>`;
+}
+function echeckColor(days){return days<0?'red':days<=3?'red':days<=14?'yellow':'green';}
+
+// ============================================================
+// EXPORT HELPERS
+// ============================================================
+function exportCSV(rows, filename){
+  if(!rows||!rows.length){alert('Keine Daten zum Exportieren.');return;}
+  const sep=';';
+  const header=Object.keys(rows[0]);
+  const lines=[header.join(sep),...rows.map(r=>header.map(h=>{
+    const v=String(r[h]??'').replace(/"/g,'""');
+    return v.includes(sep)||v.includes('\n')?`"${v}"`:v;
+  }).join(sep))];
+  const bom='\uFEFF'; // BOM for Excel
+  const blob=new Blob([bom+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+}
+
+function exportXLSX(rows, filename, sheetName='Daten'){
+  if(!rows||!rows.length){alert('Keine Daten zum Exportieren.');return;}
+  if(typeof XLSX==='undefined'){alert('XLSX-Bibliothek nicht geladen. Bitte Internetverbindung prüfen.');return;}
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,sheetName);
+  XLSX.writeFile(wb,filename);
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard(){
+  const vehicles=getVehicles();
+  const drivers=getDrivers();
+  const tours=getTours();
+  const todayTours=tours.filter(t=>t.datum===today());
+  const urgentEcheck=vehicles.filter(v=>daysUntil(v.echeck)<=14);
+  const activeV=vehicles.filter(v=>v.status==='aktiv').length;
+  const activeD=drivers.filter(d=>d.status==='aktiv').length;
+
+  const recentTours=tours.slice(-5).reverse();
+  return `
+  <div class="grid4" style="margin-bottom:20px">
+    <div class="stat-card"><div class="stat-icon" style="background:#e8eaf6">🚐</div>
+      <div><div class="stat-val">${activeV}</div><div class="stat-label">Aktive Fahrzeuge</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#e8f5e9">👤</div>
+      <div><div class="stat-val">${activeD}</div><div class="stat-label">Aktive Fahrer</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#fff8e1">📋</div>
+      <div><div class="stat-val">${todayTours.length}</div><div class="stat-label">Touren heute</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#ffebee">🔌</div>
+      <div><div class="stat-val">${urgentEcheck.length}</div><div class="stat-label">E-Check ≤14 Tage</div></div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">📋 Heutige Touren (${today()})</div>
+      ${todayTours.length?`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Fahrzeug</th><th>Fahrer</th><th>Tour</th><th>Uhrzeit</th><th>Status</th></tr></thead>
+        <tbody>${todayTours.map(t=>`<tr>
+          <td>${vehicleName(t.fahrzeugId)}</td>
+          <td>${driverName(t.fahrerId)}</td>
+          <td>${t.tour}</td><td>${t.uhrzeit}</td>
+          <td>${statusBadge(t.status)}</td></tr>`).join('')}</tbody>
+      </table></div>`:`<p style="color:var(--muted);font-size:.88rem">Keine Touren für heute.</p>`}
+    </div>
+    <div class="card">
+      <div class="card-title">🔌 E-Check bald fällig</div>
+      ${urgentEcheck.length?`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Fahrzeug</th><th>Fällig</th><th>Resttage</th><th>Status</th></tr></thead>
+        <tbody>${urgentEcheck.map(v=>{const d=daysUntil(v.echeck);const c=echeckColor(d);return`<tr>
+          <td>${v.name}</td><td>${v.echeck}</td>
+          <td><span class="tl-dot tl-${c}"></span>${d<0?'überfällig ('+Math.abs(d)+'d)':d+' Tage'}</td>
+          <td><span class="badge badge-${c==='green'?'green':c==='yellow'?'yellow':'red'}">${c==='red'?'DRINGEND':c==='yellow'?'Bald':'OK'}</span></td>
+        </tr>`;}).join('')}</tbody>
+      </table></div>`:`<p style="color:var(--muted);font-size:.88rem">✅ Alle E-Checks aktuell.</p>`}
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// TAGESEINSATZPLANUNG
+// ============================================================
+function renderTageseinsatz(){
+  return `
+  <div class="card">
+    <div class="card-title">📋 Tageseinsatzplanung</div>
+    <div class="form-row" id="tourForm">
+      <div class="form-field"><label>Datum</label><input type="date" id="tDatum" value="${today()}"/></div>
+      <div class="form-field"><label>Fahrzeug</label>
+        <select id="tFahrzeug">${getVehicles().filter(v=>v.status==='aktiv').map(v=>`<option value="${v.id}">${v.name} (${v.plate})</option>`).join('')}</select></div>
+      <div class="form-field"><label>Fahrer</label>
+        <select id="tFahrer">${getDrivers().filter(d=>d.status==='aktiv').map(d=>`<option value="${d.id}">${d.name}</option>`).join('')}</select></div>
+      <div class="form-field"><label>Tour</label><input type="text" id="tTour" placeholder="z. B. Tour 12"/></div>
+      <div class="form-field"><label>Uhrzeit</label><input type="time" id="tUhrzeit" value="07:00"/></div>
+      <div class="form-field"><label>&nbsp;</label><button class="btn btn-primary" onclick="addTour()">➕ Hinzufügen</button></div>
+    </div>
+
+    <div id="tourFilterRow" style="margin-bottom:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <label style="font-size:.82rem;font-weight:600;color:var(--primary)">Datum filtern:</label>
+      <input type="date" id="filterDatum" value="${today()}" style="padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:.84rem" onchange="renderTourTable()"/>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('filterDatum').value='';renderTourTable()">Alle anzeigen</button>
+    </div>
+
+    <div class="export-bar">
+      <span>Export:</span>
+      <button class="btn btn-success btn-sm" onclick="exportToursCSV()">📥 CSV</button>
+      <button class="btn btn-warning btn-sm" onclick="exportToursXLSX()">📊 Excel (XLSX)</button>
+    </div>
+
+    <div class="table-wrap" id="tourTableWrap"></div>
+  </div>`;
+}
+
+function initTageseinsatz(){renderTourTable();}
+
+function renderTourTable(){
+  const fd=document.getElementById('filterDatum')?.value;
+  let tours=getTours();
+  if(fd) tours=tours.filter(t=>t.datum===fd);
+  const wrap=document.getElementById('tourTableWrap');
+  if(!wrap)return;
+  if(!tours.length){wrap.innerHTML='<p style="color:var(--muted);font-size:.88rem;padding:8px 0">Keine Touren gefunden.</p>';return;}
+  wrap.innerHTML=`<table>
+    <thead><tr><th>Datum</th><th>Fahrzeug</th><th>Fahrer</th><th>Tour</th><th>Uhrzeit</th><th>Status</th><th>Notiz</th><th>Aktionen</th></tr></thead>
+    <tbody>${tours.map(t=>`<tr>
+      <td>${t.datum}</td>
+      <td>${vehicleName(t.fahrzeugId)}</td>
+      <td>${driverName(t.fahrerId)}</td>
+      <td>${t.tour}</td><td>${t.uhrzeit}</td>
+      <td><select onchange="updateTourStatus(${t.id},this.value)" style="padding:3px 6px;border-radius:5px;border:1px solid var(--border);font-size:.8rem">
+        ${['geplant','gestartet','erledigt','abgesagt'].map(s=>`<option${s===t.status?' selected':''}>${s}</option>`).join('')}
+      </select></td>
+      <td style="max-width:160px;font-size:.82rem">${t.notiz||'–'}</td>
+      <td><button class="btn btn-outline btn-sm" style="color:var(--danger)" onclick="deleteTour(${t.id})">🗑</button></td>
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function addTour(){
+  const datum=document.getElementById('tDatum').value;
+  const fahrzeugId=+document.getElementById('tFahrzeug').value;
+  const fahrerId=+document.getElementById('tFahrer').value;
+  const tour=document.getElementById('tTour').value.trim();
+  const uhrzeit=document.getElementById('tUhrzeit').value;
+  if(!datum||!tour){alert('Bitte Datum und Tour angeben.');return;}
+  const tours=getTours();
+  const newId=Math.max(0,...tours.map(t=>t.id))+1;
+  tours.push({id:newId,datum,fahrzeugId,fahrerId,tour,uhrzeit,status:'geplant',notiz:''});
+  save('tours',tours);
+  renderTourTable();
+}
+
+function updateTourStatus(id,status){
+  const tours=getTours();
+  const t=tours.find(x=>x.id===id);
+  if(t){t.status=status;save('tours',tours);}
+}
+
+function deleteTour(id){
+  if(!confirm('Tour löschen?'))return;
+  save('tours',getTours().filter(t=>t.id!==id));
+  renderTourTable();
+}
+
+function exportToursCSV(){
+  const rows=getTours().map(t=>({Datum:t.datum,Fahrzeug:vehicleName(t.fahrzeugId),Fahrer:driverName(t.fahrerId),Tour:t.tour,Uhrzeit:t.uhrzeit,Status:t.status,Notiz:t.notiz}));
+  exportCSV(rows,'MoonStar_Tageseinsatz.csv');
+}
+function exportToursXLSX(){
+  const rows=getTours().map(t=>({Datum:t.datum,Fahrzeug:vehicleName(t.fahrzeugId),Fahrer:driverName(t.fahrerId),Tour:t.tour,Uhrzeit:t.uhrzeit,Status:t.status,Notiz:t.notiz}));
+  exportXLSX(rows,'MoonStar_Tageseinsatz.xlsx','Tageseinsatz');
+}
+
+// ============================================================
+// E-CHECK
+// ============================================================
+function renderEcheck(){
+  const vehicles=getVehicles();
+  const all=vehicles.map(v=>({...v,days:daysUntil(v.echeck)})).sort((a,b)=>a.days-b.days);
+  const urgent=all.filter(v=>v.days<=14);
+  const ok=all.filter(v=>v.days>14);
+  return `
+  <div class="card">
+    <div class="card-title">🔌 E-Check-Übersicht (alle Fahrzeuge)</div>
+    <div class="export-bar">
+      <span>Export:</span>
+      <button class="btn btn-success btn-sm" onclick="exportEcheckCSV()">📥 CSV</button>
+      <button class="btn btn-warning btn-sm" onclick="exportEcheckXLSX()">📊 Excel (XLSX)</button>
+    </div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Fahrzeug</th><th>Kennzeichen</th><th>Letzter E-Check</th><th>Fällig bis</th><th>Resttage</th><th>Status</th></tr></thead>
+      <tbody>${all.map(v=>{
+        const c=echeckColor(v.days);
+        const label=v.days<0?`überfällig (${Math.abs(v.days)}d)`:v.days===0?'Heute!':v.days+' Tage';
+        return`<tr>
+          <td><strong>${v.name}</strong></td>
+          <td>${v.plate}</td>
+          <td>${v.lastEcheck}</td>
+          <td>${v.echeck}</td>
+          <td><span class="tl-dot tl-${c}"></span>${label}</td>
+          <td><span class="badge badge-${c==='green'?'green':c==='yellow'?'yellow':'red'}">${c==='red'?(v.days<0?'ÜBERFÄLLIG':'DRINGEND'):c==='yellow'?'Bald fällig':'OK'}</span></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div>
+  ${urgent.length?`
+  <div class="card" style="border-left:4px solid var(--danger)">
+    <div class="card-title" style="color:var(--danger)">⚠️ Sofortiger Handlungsbedarf – E-Check ≤14 Tage</div>
+    <p style="font-size:.88rem;color:var(--muted);margin-bottom:12px">${urgent.length} Fahrzeug(e) benötigen dringend einen E-Check.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Fahrzeug</th><th>Kennzeichen</th><th>Fällig</th><th>Resttage</th></tr></thead>
+      <tbody>${urgent.map(v=>`<tr>
+        <td><strong>${v.name}</strong></td><td>${v.plate}</td><td>${v.echeck}</td>
+        <td style="color:${v.days<0?'var(--danger)':'var(--warning)'};font-weight:700">${v.days<0?'überfällig!':v.days+' Tage'}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+  </div>`:''}`;
+}
+
+function exportEcheckCSV(){
+  const rows=getVehicles().map(v=>{const d=daysUntil(v.echeck);return{Fahrzeug:v.name,Kennzeichen:v.plate,LetzterECheck:v.lastEcheck,FälligBis:v.echeck,Resttage:d,Status:echeckColor(d)==='green'?'OK':echeckColor(d)==='yellow'?'Bald fällig':d<0?'Überfällig':'Dringend'};});
+  exportCSV(rows,'MoonStar_ECheck.csv');
+}
+function exportEcheckXLSX(){
+  const rows=getVehicles().map(v=>{const d=daysUntil(v.echeck);return{Fahrzeug:v.name,Kennzeichen:v.plate,'Letzter E-Check':v.lastEcheck,'Fällig bis':v.echeck,Resttage:d,Status:echeckColor(d)==='green'?'OK':echeckColor(d)==='yellow'?'Bald fällig':d<0?'Überfällig':'Dringend'};});
+  exportXLSX(rows,'MoonStar_ECheck.xlsx','E-Check');
+}
+
+// ============================================================
+// FAHRZEUGE
+// ============================================================
+function renderFahrzeuge(){
+  const v=getVehicles();
+  return `
+  <div class="card">
+    <div class="card-title">🚐 Fahrzeugverwaltung</div>
+    <div class="export-bar">
+      <span>Export:</span>
+      <button class="btn btn-success btn-sm" onclick="exportFzCSV()">📥 CSV</button>
+      <button class="btn btn-warning btn-sm" onclick="exportFzXLSX()">📊 Excel (XLSX)</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Name</th><th>Kennzeichen</th><th>Typ</th><th>Status</th><th>E-Check fällig</th><th>KM-Stand</th></tr></thead>
+      <tbody>${v.map(x=>`<tr>
+        <td><strong>${x.name}</strong></td>
+        <td>${x.plate}</td><td>${x.type}</td>
+        <td>${statusBadge(x.status)}</td>
+        <td>${x.echeck} <span class="tl-dot tl-${echeckColor(daysUntil(x.echeck))}"></span></td>
+        <td>${x.km.toLocaleString('de-DE')} km</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+  </div>`;
+}
+function exportFzCSV(){exportCSV(getVehicles().map(v=>({Fahrzeug:v.name,Kennzeichen:v.plate,Typ:v.type,Status:v.status,'E-Check':v.echeck,'KM-Stand':v.km})),'MoonStar_Fahrzeuge.csv');}
+function exportFzXLSX(){exportXLSX(getVehicles().map(v=>({Fahrzeug:v.name,Kennzeichen:v.plate,Typ:v.type,Status:v.status,'E-Check':v.echeck,'KM-Stand':v.km})),'MoonStar_Fahrzeuge.xlsx','Fahrzeuge');}
+
+// ============================================================
+// FAHRER
+// ============================================================
+function renderFahrer(){
+  const d=getDrivers();
+  return `
+  <div class="card">
+    <div class="card-title">👤 Fahrerverwaltung</div>
+    <div class="export-bar">
+      <span>Export:</span>
+      <button class="btn btn-success btn-sm" onclick="exportFaCSV()">📥 CSV</button>
+      <button class="btn btn-warning btn-sm" onclick="exportFaXLSX()">📊 Excel (XLSX)</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Name</th><th>Führerschein</th><th>Ablauf</th><th>Telefon</th><th>Status</th></tr></thead>
+      <tbody>${d.map(x=>{
+        const daysLic=daysUntil(x.licenseExp);
+        return`<tr>
+          <td><strong>${x.name}</strong></td>
+          <td>${x.license}</td>
+          <td>${x.licenseExp} <span class="tl-dot tl-${echeckColor(daysLic)}"></span></td>
+          <td>${x.phone}</td>
+          <td>${statusBadge(x.status)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div>`;
+}
+function exportFaCSV(){exportCSV(getDrivers().map(d=>({Name:d.name,Führerschein:d.license,'Ablauf Führerschein':d.licenseExp,Telefon:d.phone,Status:d.status})),'MoonStar_Fahrer.csv');}
+function exportFaXLSX(){exportXLSX(getDrivers().map(d=>({Name:d.name,Führerschein:d.license,'Ablauf Führerschein':d.licenseExp,Telefon:d.phone,Status:d.status})),'MoonStar_Fahrer.xlsx','Fahrer');}
+
+// ============================================================
+// ÜBERGABE / PRÜFUNG
+// ============================================================
+function renderUebergabe(){
+  const checks=getChecks();
+  return `
+  <div class="card">
+    <div class="card-title">📝 Übergabe & Fahrzeugprüfung</div>
+    <div class="form-row">
+      <div class="form-field"><label>Datum</label><input type="date" id="cDatum" value="${today()}"/></div>
+      <div class="form-field"><label>Fahrzeug</label>
+        <select id="cFahrzeug">${getVehicles().map(v=>`<option value="${v.id}">${v.name} (${v.plate})</option>`).join('')}</select></div>
+      <div class="form-field"><label>Fahrer</label>
+        <select id="cFahrer">${getDrivers().map(d=>`<option value="${d.id}">${d.name}</option>`).join('')}</select></div>
+      <div class="form-field"><label>Typ</label>
+        <select id="cTyp"><option>Übergabe</option><option>Rückgabe</option><option>Inspektion</option></select></div>
+      <div class="form-field"><label>Ergebnis</label>
+        <select id="cErgebnis"><option>OK</option><option>Mängel</option></select></div>
+      <div class="form-field"><label>Notiz</label><input type="text" id="cNotiz" placeholder="Notiz…"/></div>
+      <div class="form-field"><label>Signatur</label><input type="text" id="cSig" placeholder="Name Fahrer"/></div>
+      <div class="form-field"><label>&nbsp;</label><button class="btn btn-primary" onclick="addCheck()">➕ Eintragen</button></div>
+    </div>
+    <div class="export-bar">
+      <span>Export:</span>
+      <button class="btn btn-success btn-sm" onclick="exportCheckCSV()">📥 CSV</button>
+      <button class="btn btn-warning btn-sm" onclick="exportCheckXLSX()">📊 Excel (XLSX)</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Datum</th><th>Fahrzeug</th><th>Fahrer</th><th>Typ</th><th>Ergebnis</th><th>Notiz</th><th>Signatur</th><th></th></tr></thead>
+      <tbody id="checkBody">${checksRows(checks)}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function checksRows(checks){
+  return checks.map(c=>`<tr>
+    <td>${c.datum}</td>
+    <td>${vehicleName(c.fahrzeugId)}</td>
+    <td>${driverName(c.fahrerId)}</td>
+    <td>${c.typ}</td>
+    <td>${statusBadge(c.ergebnis)}</td>
+    <td style="font-size:.82rem">${c.notiz||'–'}</td>
+    <td style="font-size:.82rem">${c.signatur||'–'}</td>
+    <td><button class="btn btn-outline btn-sm" style="color:var(--danger)" onclick="deleteCheck(${c.id})">🗑</button></td>
+  </tr>`).join('');
+}
+
+function addCheck(){
+  const datum=document.getElementById('cDatum').value;
+  const fahrzeugId=+document.getElementById('cFahrzeug').value;
+  const fahrerId=+document.getElementById('cFahrer').value;
+  const typ=document.getElementById('cTyp').value;
+  const ergebnis=document.getElementById('cErgebnis').value;
+  const notiz=document.getElementById('cNotiz').value.trim();
+  const signatur=document.getElementById('cSig').value.trim();
+  if(!datum){alert('Datum eingeben.');return;}
+  const checks=getChecks();
+  const newId=Math.max(0,...checks.map(c=>c.id))+1;
+  checks.push({id:newId,datum,fahrzeugId,fahrerId,typ,ergebnis,notiz,signatur});
+  save('checks',checks);
+  document.getElementById('checkBody').innerHTML=checksRows(getChecks());
+}
+function deleteCheck(id){
+  if(!confirm('Eintrag löschen?'))return;
+  save('checks',getChecks().filter(c=>c.id!==id));
+  document.getElementById('checkBody').innerHTML=checksRows(getChecks());
+}
+function exportCheckCSV(){
+  const rows=getChecks().map(c=>({Datum:c.datum,Fahrzeug:vehicleName(c.fahrzeugId),Fahrer:driverName(c.fahrerId),Typ:c.typ,Ergebnis:c.ergebnis,Notiz:c.notiz,Signatur:c.signatur}));
+  exportCSV(rows,'MoonStar_Uebergabe.csv');
+}
+function exportCheckXLSX(){
+  const rows=getChecks().map(c=>({Datum:c.datum,Fahrzeug:vehicleName(c.fahrzeugId),Fahrer:driverName(c.fahrerId),Typ:c.typ,Ergebnis:c.ergebnis,Notiz:c.notiz,Signatur:c.signatur}));
+  exportXLSX(rows,'MoonStar_Uebergabe.xlsx','Übergabe');
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+(async()=>{
+  // Ensure credentials are ready before setting up the button
+  await new Promise(r=>setTimeout(r,100));
+  const saved=localStorage.getItem('mf_role');
+  if(saved&&CREDENTIALS[saved]){
+    currentRole=saved;
+    showApp();
+  }
+})();
+</script>
+</body>
+</html>

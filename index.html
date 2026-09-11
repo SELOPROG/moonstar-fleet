@@ -1776,6 +1776,7 @@ window.printHandover=function(id){
   const interiorPhotosHtml=(h.interiorPhotos&&h.interiorPhotos.length)?h.interiorPhotos.map((photo,i)=>`<img src="${photo.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Innenraumfoto ${i+1}">`).join(''):'<em>Keine Fotos beigefügt</em>';
   const sigHtml=h.signature?`<img src="${h.signature}" style="max-width:320px;border:1px solid #ccc;border-radius:6px" alt="Unterschrift">`:'<em>Keine Unterschrift</em>';
   const w=window.open('','_blank','width=800,height=650');
+  if(!w){toast('Druckfenster wurde blockiert.','error');return;}
   w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Übergabeprotokoll</title>
   <style>body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:780px;margin:0 auto}
   h1{font-size:1.4rem;margin-bottom:4px}h2{font-size:1rem;color:#555;margin-top:24px;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:4px}
@@ -2325,7 +2326,12 @@ function bindPhotoUpload(buttonId,inputId,store,render){
   document.getElementById(buttonId).addEventListener('click',()=>document.getElementById(inputId).click());
   document.getElementById(inputId).addEventListener('change',async e=>{
     const files=Array.from(e.target.files);
+    const safeImageTypes=new Set(['image/png','image/jpeg','image/webp','image/gif']);
     for(const f of files){
+      if(!safeImageTypes.has(f.type)){
+        toast('Bitte nur PNG, JPG, WEBP oder GIF hochladen.','error');
+        continue;
+      }
       const data=await fileToDataUrl(f);
       store.push({name:f.name,data});
     }
@@ -2459,16 +2465,16 @@ document.getElementById('hm-save').addEventListener('click',()=>{
   const editId=document.getElementById('hm-id').value;
 
   if(!vehicleId||!date||!from||!to){toast('Bitte alle Pflichtfelder ausfüllen.','error');return;}
-  if(isSigEmpty()&&!editId){
-    document.getElementById('sig-error').style.display='block';
-    return;
-  }
-  document.getElementById('sig-error').style.display='none';
   const existingHandover=editId?DB.handovers.find(x=>x.id===editId):null;
 
   const signature=isSigEmpty()
     ?(existingHandover?.signature||'')
     :sigCanvas.toDataURL('image/png');
+  if(!signature){
+    document.getElementById('sig-error').style.display='block';
+    return;
+  }
+  document.getElementById('sig-error').style.display='none';
 
   const entry={
     id:editId||uid(),
@@ -2999,6 +3005,7 @@ window.printECheck=function(id){
         ${escPrint(item)}</div>`;
     }).join('')}</div>`).join('');
   const w=window.open('','_blank','width=800,height=700');
+  if(!w){toast('Druckfenster wurde blockiert.','error');return;}
   w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>E-Check</title>
   <style>body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:780px;margin:0 auto}
   h1{font-size:1.3rem;margin-bottom:4px}h2{font-size:1rem;color:#555;margin-top:20px;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:4px}
@@ -3152,6 +3159,7 @@ document.getElementById('status-modal-print').addEventListener('click',()=>{
       <td>${escPrint(v.fuel||'—')}</td>
     </tr>`).join('');
   const w=window.open('','_blank','width=900,height=700');
+  if(!w){toast('Druckfenster wurde blockiert.','error');return;}
   w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>${escPrint(title)}</title>
   <style>
     body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:960px;margin:0 auto}

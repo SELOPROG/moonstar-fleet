@@ -1141,34 +1141,6 @@ tr:hover td{background:rgba(255,255,255,.025)}
   </div>
 </div>
 
-<!-- ─── Login Overlay ─────────────────────────────────────────── -->
-<div id="login-overlay">
-  <div class="login-box">
-    <div class="login-logo">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="1" y="3" width="15" height="13" rx="2"/>
-        <path d="M16 8h4l3 5v3h-7V8z"/>
-        <circle cx="5.5" cy="18.5" r="2.5"/>
-        <circle cx="18.5" cy="18.5" r="2.5"/>
-      </svg>
-      MoonStar <span>Fleet</span>
-    </div>
-    <div class="login-subtitle">Fuhrparkverwaltung · PLD · Bitte anmelden</div>
-    <form id="login-form">
-      <div class="form-group">
-        <label>Benutzername</label>
-        <input class="form-control" id="login-user" type="text" placeholder="Benutzername" autocomplete="username">
-      </div>
-      <div class="form-group">
-        <label>Passwort</label>
-        <input class="form-control" id="login-pass" type="password" placeholder="Passwort" autocomplete="current-password">
-      </div>
-      <div id="login-error"></div>
-      <button class="login-btn" type="submit">Anmelden</button>
-    </form>
-  </div>
-</div>
-
 <!-- ─── Status-Detail Modal ───────────────────────────────────────── -->
 <div class="modal-overlay" id="status-modal">
   <div class="modal" style="max-width:640px">
@@ -1761,8 +1733,10 @@ window.deleteHandover=function(id){
   const h=DB.handovers.find(x=>x.id===id);
   if(!h)return;
   if(!confirm('Übergabeprotokoll wirklich löschen?'))return;
+  const prevHandovers=DB.handovers;
   DB.handovers=DB.handovers.filter(x=>x.id!==id);
-  saveData(DB);
+  try{saveData(DB);}
+  catch(e){DB.handovers=prevHandovers;return;}
   toast('Protokoll gelöscht.');
   refreshDataViews(h.vehicleId);
 }
@@ -1943,9 +1917,15 @@ function confirmDeleteVehicle(id){
   const v=DB.vehicles.find(x=>x.id===id);
   if(!v)return;
   if(!confirm(`Fahrzeug "${v.name}" (${v.plate}) wirklich löschen?\nAlle zugehörigen Einträge werden ebenfalls gelöscht.`))return;
+  const prevCollections={};
+  ['vehicles','maintenance','repairs','damages','tickets','handovers','dailyPlans','echecks'].forEach(k=>{prevCollections[k]=DB[k]});
   DB.vehicles=DB.vehicles.filter(x=>x.id!==id);
   ['maintenance','repairs','damages','tickets','handovers','dailyPlans','echecks'].forEach(k=>{DB[k]=DB[k].filter(x=>x.vehicleId!==id)});
-  saveData(DB);
+  try{saveData(DB);}
+  catch(e){
+    Object.keys(prevCollections).forEach(k=>{DB[k]=prevCollections[k]});
+    return;
+  }
   toast('Fahrzeug gelöscht.');
   if(currentVehicleId===id)currentVehicleId=null;
   refreshDataViews();
@@ -2113,7 +2093,8 @@ function deleteEntry(type,id){
   if(!item)return;
   if(!confirm('Diesen Eintrag wirklich löschen?'))return;
   DB[type]=arr.filter(x=>x.id!==id);
-  saveData(DB);
+  try{saveData(DB);}
+  catch(e){DB[type]=arr;return;}
   toast('Eintrag gelöscht.');
   refreshDataViews(item.vehicleId);
 }
@@ -2664,8 +2645,10 @@ document.getElementById('dp-modal-save').addEventListener('click',()=>{
 
 window.deleteDailyPlan=function(id){
   if(!confirm('Diesen Plan wirklich löschen?'))return;
+  const prevPlans=DB.dailyPlans;
   DB.dailyPlans=DB.dailyPlans.filter(x=>x.id!==id);
-  saveData(DB);
+  try{saveData(DB);}
+  catch(e){DB.dailyPlans=prevPlans;return;}
   toast('Plan gelöscht.');
   refreshDataViews();
 };
@@ -2875,8 +2858,10 @@ document.getElementById('ec-modal-save').addEventListener('click',()=>{
 
 window.deleteECheck=function(id){
   if(!confirm('Diesen E-Check wirklich löschen?'))return;
+  const prevEChecks=DB.echecks;
   DB.echecks=DB.echecks.filter(x=>x.id!==id);
-  saveData(DB);
+  try{saveData(DB);}
+  catch(e){DB.echecks=prevEChecks;return;}
   toast('E-Check gelöscht.');
   refreshDataViews();
 };
@@ -3071,17 +3056,6 @@ document.getElementById('status-modal-print').addEventListener('click',()=>{
   </body></html>`);
   w.document.close();
 });
-
-/* ─── Login ───────────────────────────────────────────────────── */
-(function(){
-  const overlay=document.getElementById('login-overlay');
-  overlay.style.display='none';
-  document.getElementById('login-form').addEventListener('submit',e=>{
-    e.preventDefault();
-    document.getElementById('login-error').textContent='Die lokale Demo-Anmeldung ist deaktiviert.';
-    document.getElementById('login-pass').value='';
-  });
-})();
 
 /* ─── Init ────────────────────────────────────────────────────── */
 initDB();

@@ -2481,8 +2481,8 @@ document.getElementById('importFile').addEventListener('change',async e=>{
 /* ─── Reset ───────────────────────────────────────────────────── */
 document.getElementById('nav-reset').addEventListener('click',()=>{
   if(!confirm('Wirklich ALLE Daten löschen? Dies kann nicht rückgängig gemacht werden.'))return;
-  localStorage.removeItem(SK);
   DB=createEmptyDB();
+  saveData(DB);
   currentVehicleId=null;
   filterSearch='';filterStatus='';filterBrand='';
   hoFilterSearch='';hoFilterType='';hoFilterVehicle='';

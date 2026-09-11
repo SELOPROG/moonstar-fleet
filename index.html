@@ -2469,8 +2469,13 @@ document.getElementById('importFile').addEventListener('change',async e=>{
     const text=await file.text();
     const imp=JSON.parse(text);
     if(!Array.isArray(imp?.vehicles))throw new Error('Ungültiges Format');
+    const prevDB=DB;
     DB=normalizeDB(imp).db;
-    saveData(DB);
+    try{saveData(DB);}
+    catch(err){
+      DB=prevDB;
+      throw err;
+    }
     toast('Daten importiert.');
     refreshDataViews();
     navigate(currentView);
@@ -2481,8 +2486,10 @@ document.getElementById('importFile').addEventListener('change',async e=>{
 /* ─── Reset ───────────────────────────────────────────────────── */
 document.getElementById('nav-reset').addEventListener('click',()=>{
   if(!confirm('Wirklich ALLE Daten löschen? Dies kann nicht rückgängig gemacht werden.'))return;
+  const prevDB=DB;
   DB=createEmptyDB();
-  saveData(DB);
+  try{saveData(DB);}
+  catch(e){DB=prevDB;return;}
   currentVehicleId=null;
   filterSearch='';filterStatus='';filterBrand='';
   hoFilterSearch='';hoFilterType='';hoFilterVehicle='';
@@ -2990,6 +2997,7 @@ document.getElementById('importCsvFile').addEventListener('change',e=>{
         'baujahr':'year','status':'status','fahrer':'driver','kilometerstand':'km',
         'kraftstoff':'fuel','fin':'vin','notizen':'notes'
       };
+      const prevVehicles=DB.vehicles.map(v=>({...v}));
       let added=0,updated=0;
       for(let i=1;i<lines.length;i++){
         if(!lines[i].trim())continue;
@@ -3001,7 +3009,11 @@ document.getElementById('importCsvFile').addEventListener('change',e=>{
         if(existing){Object.assign(existing,obj);updated++;}
         else{DB.vehicles.push({id:uid(),...obj,photo:''});added++;}
       }
-      saveData(DB);
+      try{saveData(DB);}
+      catch(err){
+        DB.vehicles=prevVehicles;
+        throw err;
+      }
       toast(`CSV importiert: ${added} neu, ${updated} aktualisiert.`);
       refreshDataViews();
     }catch(err){toast('CSV Import fehlgeschlagen: '+err.message,'error');}

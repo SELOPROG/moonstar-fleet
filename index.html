@@ -2349,6 +2349,7 @@ document.getElementById('hm-vehicle-sel').addEventListener('change',()=>{
 });
 
 window.openHandoverModal=function(vehicleId,editId){
+  if(!DB.vehicles.length){toast('Bitte zuerst ein Fahrzeug anlegen.','error');return;}
   replaceUploads(_hmDocs,[]);
   replaceUploads(_hmVehiclePhotos,[]);
   replaceUploads(_hmInteriorPhotos,[]);
@@ -2469,7 +2470,7 @@ document.getElementById('importFile').addEventListener('change',async e=>{
     const text=await file.text();
     const imp=JSON.parse(text);
     if(!Array.isArray(imp?.vehicles))throw new Error('Ungültiges Format');
-    const prevDB=DB;
+    const prevDB=JSON.parse(JSON.stringify(DB));
     DB=normalizeDB(imp).db;
     try{saveData(DB);}
     catch(err){
@@ -2536,6 +2537,30 @@ function fileToDataUrl(file){
   });
 }
 
+function parseCsvRows(text){
+  const rows=[];
+  let row=[],cell='',inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"'){
+      if(inQuotes&&text[i+1]==='"'){cell+='"';i++;}
+      else inQuotes=!inQuotes;
+    }else if((ch===';'||ch===',')&&!inQuotes){
+      row.push(cell);cell='';
+    }else if((ch==='\n'||ch==='\r')&&!inQuotes){
+      if(ch==='\r'&&text[i+1]==='\n')i++;
+      row.push(cell);
+      if(row.some(v=>String(v).trim()))rows.push(row);
+      row=[];cell='';
+    }else{
+      cell+=ch;
+    }
+  }
+  row.push(cell);
+  if(row.some(v=>String(v).trim()))rows.push(row);
+  return rows;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    TAGESEINSATZPLAN MODULE
    ═════════════════════════════════════════════════════════════== */
@@ -2598,6 +2623,7 @@ function renderDailyPlans(){
 
 /* ─── Tageseinsatzplan – modal ────────────────────────────────── */
 function openDailyPlanModal(editId){
+  if(!DB.vehicles.length){toast('Bitte zuerst ein Fahrzeug anlegen.','error');return;}
   const editObj=editId?DB.dailyPlans.find(x=>x.id===editId):null;
   document.getElementById('dp-modal-title').textContent=editId?'Tageseinsatzplan bearbeiten':'Tageseinsatzplan erstellen';
   document.getElementById('dp-id').value=editId||'';
@@ -2821,6 +2847,7 @@ window.toggleECheckCard=function(id){
 };
 
 function openECheckModal(editId){
+  if(!DB.vehicles.length){toast('Bitte zuerst ein Fahrzeug anlegen.','error');return;}
   const editObj=editId?DB.echecks.find(x=>x.id===editId):null;
   document.getElementById('ec-modal-title').textContent=editId?'E-Check bearbeiten':'E-Check durchführen';
   document.getElementById('ec-id').value=editId||'';
@@ -2977,21 +3004,9 @@ document.getElementById('importCsvFile').addEventListener('change',e=>{
   reader.onload=ev=>{
     try{
       const text=ev.target.result.replace(/^\uFEFF/,''); // strip BOM
-      const lines=text.split(/\r?\n/).filter(l=>l.trim());
-      if(lines.length<2){toast('CSV leer oder ungültig.','error');return;}
-      // parse header row to get field order
-      const parseRow=row=>{
-        const cells=[];let cur='',inQ=false;
-        for(let i=0;i<row.length;i++){
-          const ch=row[i];
-          if(ch==='"'){if(inQ&&row[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
-          else if((ch===';'||ch===',')&&!inQ){cells.push(cur);cur='';}
-          else cur+=ch;
-        }
-        cells.push(cur);
-        return cells;
-      };
-      const hdr=parseRow(lines[0]).map(h=>h.toLowerCase().trim());
+      const rows=parseCsvRows(text);
+      if(rows.length<2){toast('CSV leer oder ungültig.','error');return;}
+      const hdr=rows[0].map(h=>h.toLowerCase().trim());
       const fieldMap={
         'name':'name','kennzeichen':'plate','marke':'brand','modell':'model',
         'baujahr':'year','status':'status','fahrer':'driver','kilometerstand':'km',
@@ -2999,9 +3014,8 @@ document.getElementById('importCsvFile').addEventListener('change',e=>{
       };
       const prevVehicles=DB.vehicles.map(v=>({...v}));
       let added=0,updated=0;
-      for(let i=1;i<lines.length;i++){
-        if(!lines[i].trim())continue;
-        const vals=parseRow(lines[i]);
+      for(let i=1;i<rows.length;i++){
+        const vals=rows[i];
         const obj={};
         hdr.forEach((h,idx)=>{const key=fieldMap[h];if(key)obj[key]=vals[idx]||'';});
         if(!obj.name&&!obj.plate)continue;

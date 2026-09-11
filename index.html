@@ -1263,7 +1263,7 @@ function createEmptyDB(){
 
 function normalizeDB(data){
   const source=(data&&typeof data==='object')?data:{};
-  const normalized={...source};
+  const normalized={};
   let changed=!data||typeof data!=='object';
   Object.keys(createEmptyDB()).forEach(key=>{
     if(Array.isArray(source[key]))normalized[key]=source[key];
@@ -1920,6 +1920,7 @@ document.getElementById('modal-save').addEventListener('click',async()=>{
   try{
     if(existingId){
       const idx=DB.vehicles.findIndex(x=>x.id===existingId);
+      if(idx===-1){toast('Fahrzeug konnte nicht gefunden werden.','error');return;}
       DB.vehicles[idx]=entry;
       saveData(DB);
       toast('Fahrzeug aktualisiert.');
@@ -2085,6 +2086,7 @@ document.getElementById('entry-modal-save').addEventListener('click',()=>{
   try{
     if(editId){
       const idx=DB[type].findIndex(x=>x.id===editId);
+      if(idx===-1){toast('Eintrag konnte nicht gefunden werden.','error');return;}
       prevEntry=DB[type][idx];
       DB[type][idx]=entry;
       saveData(DB);
@@ -2246,6 +2248,7 @@ const sigCtx=sigCanvas.getContext('2d');
 let _sigDrawing=false, _sigLast={x:0,y:0};
 
 function resizeSigCanvas(){
+  const currentSignature=isSigEmpty()?'':sigCanvas.toDataURL('image/png');
   const rect=sigCanvas.parentElement.getBoundingClientRect();
   const dpr=window.devicePixelRatio||1;
   sigCanvas.width=rect.width*dpr;
@@ -2256,6 +2259,7 @@ function resizeSigCanvas(){
   sigCtx.lineWidth=2;
   sigCtx.lineCap='round';
   sigCtx.lineJoin='round';
+  if(currentSignature)drawSignature(currentSignature);
 }
 resizeSigCanvas();
 window.addEventListener('resize',resizeSigCanvas);
@@ -2289,6 +2293,17 @@ function isSigEmpty(){
   const d=sigCtx.getImageData(0,0,sigCanvas.width,sigCanvas.height).data;
   for(let i=3;i<d.length;i+=4)if(d[i]>10)return false;
   return true;
+}
+
+function drawSignature(signature){
+  if(!signature)return;
+  const img=new Image();
+  img.onload=()=>{
+    const dpr=window.devicePixelRatio||1;
+    sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+    sigCtx.drawImage(img,0,0,sigCanvas.width/dpr,sigCanvas.height/dpr);
+  };
+  img.src=signature;
 }
 
 // Uploads
@@ -2374,14 +2389,6 @@ window.openHandoverModal=function(vehicleId,editId){
     replaceUploads(_hmDocs,editObj.docs?[...editObj.docs]:[]);
     replaceUploads(_hmVehiclePhotos,editObj.vehiclePhotos?[...editObj.vehiclePhotos]:[]);
     replaceUploads(_hmInteriorPhotos,editObj.interiorPhotos?[...editObj.interiorPhotos]:[]);
-    if(editObj.signature){
-      const img=new Image();
-      img.onload=()=>{
-        const dpr=window.devicePixelRatio||1;
-        sigCtx.drawImage(img,0,0,sigCanvas.width/dpr,sigCanvas.height/dpr);
-      };
-      img.src=editObj.signature;
-    }
   } else {
     document.getElementById('hm-type').value='Übergabe';
     // default datetime = now
@@ -2400,8 +2407,10 @@ window.openHandoverModal=function(vehicleId,editId){
   renderVehiclePhotoPreviews();
   renderInteriorPhotoPreviews();
   document.getElementById('handover-modal').classList.add('open');
-  // resize canvas after modal opens
-  setTimeout(resizeSigCanvas,50);
+  setTimeout(()=>{
+    resizeSigCanvas();
+    if(editObj?.signature)drawSignature(editObj.signature);
+  },50);
 };
 
 function closeHandoverModal(){document.getElementById('handover-modal').classList.remove('open')}
@@ -2447,6 +2456,7 @@ document.getElementById('hm-save').addEventListener('click',()=>{
   try{
     if(editId){
       const idx=DB.handovers.findIndex(x=>x.id===editId);
+      if(idx===-1){toast('Protokoll konnte nicht gefunden werden.','error');return;}
       prevHandover=DB.handovers[idx];
       DB.handovers[idx]=entry;
       saveData(DB);
@@ -2633,6 +2643,7 @@ document.getElementById('dp-modal-save').addEventListener('click',()=>{
   try{
     if(editId){
       const idx=DB.dailyPlans.findIndex(x=>x.id===editId);
+      if(idx===-1){toast('Tageseinsatzplan konnte nicht gefunden werden.','error');return;}
       prev=DB.dailyPlans[idx];
       DB.dailyPlans[idx]=entry;
       saveData(DB);
@@ -2843,6 +2854,7 @@ document.getElementById('ec-modal-save').addEventListener('click',()=>{
   try{
     if(editId){
       const idx=DB.echecks.findIndex(x=>x.id===editId);
+      if(idx===-1){toast('E-Check konnte nicht gefunden werden.','error');return;}
       prev=DB.echecks[idx];
       DB.echecks[idx]=entry;
       saveData(DB);
@@ -3062,25 +3074,12 @@ document.getElementById('status-modal-print').addEventListener('click',()=>{
 
 /* ─── Login ───────────────────────────────────────────────────── */
 (function(){
-  const AUTH_USER='PLD-Fuhrpark';
-  // Stored as char codes to avoid plain-text secret scanning triggers
-  // Password: PLD2026#3627*
-  const AUTH_PASS=[80,76,68,50,48,50,54,35,51,54,50,55,42].map(c=>String.fromCharCode(c)).join('');
   const overlay=document.getElementById('login-overlay');
-  if(sessionStorage.getItem('fleet_auth')==='1'){overlay.style.display='none';}
+  overlay.style.display='none';
   document.getElementById('login-form').addEventListener('submit',e=>{
     e.preventDefault();
-    const u=document.getElementById('login-user').value;
-    const p=document.getElementById('login-pass').value;
-    const errEl=document.getElementById('login-error');
-    if(u===AUTH_USER&&p===AUTH_PASS){
-      sessionStorage.setItem('fleet_auth','1');
-      overlay.style.display='none';
-      errEl.textContent='';
-    } else {
-      errEl.textContent='Benutzername oder Passwort falsch.';
-      document.getElementById('login-pass').value='';
-    }
+    document.getElementById('login-error').textContent='Die lokale Demo-Anmeldung ist deaktiviert.';
+    document.getElementById('login-pass').value='';
   });
 })();
 

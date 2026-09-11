@@ -2257,7 +2257,7 @@ function resizeSigCanvas(){
   sigCanvas.width=rect.width*dpr;
   sigCanvas.height=160*dpr;
   sigCanvas.style.height='160px';
-  sigCtx.scale(dpr,dpr);
+  sigCtx.setTransform(dpr,0,0,dpr,0,0);
   sigCtx.strokeStyle='#111';
   sigCtx.lineWidth=2;
   sigCtx.lineCap='round';
@@ -2417,7 +2417,18 @@ window.openHandoverModal=function(vehicleId,editId){
   },50);
 };
 
-function closeHandoverModal(){document.getElementById('handover-modal').classList.remove('open')}
+function closeHandoverModal(){
+  document.getElementById('handover-form').reset();
+  replaceUploads(_hmDocs,[]);
+  replaceUploads(_hmVehiclePhotos,[]);
+  replaceUploads(_hmInteriorPhotos,[]);
+  renderDocPreviews();
+  renderVehiclePhotoPreviews();
+  renderInteriorPhotoPreviews();
+  sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+  document.getElementById('sig-error').style.display='none';
+  document.getElementById('handover-modal').classList.remove('open');
+}
 document.getElementById('hm-close').addEventListener('click',closeHandoverModal);
 document.getElementById('hm-cancel').addEventListener('click',closeHandoverModal);
 document.getElementById('handover-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeHandoverModal()});
@@ -2485,9 +2496,10 @@ document.getElementById('importFile').addEventListener('change',async e=>{
   try{
     const text=await file.text();
     const imp=JSON.parse(text);
-    if(!Array.isArray(imp?.vehicles))throw new Error('Ungültiges Format');
+    const normalized=normalizeDB(imp);
+    if(!normalized.db.vehicles.length&&!(['vehicles','vehicle'].some(key=>Array.isArray(imp?.[key]))))throw new Error('Ungültiges Format');
     const prevDB=JSON.parse(JSON.stringify(DB));
-    DB=normalizeDB(imp).db;
+    DB=normalized.db;
     try{saveData(DB);}
     catch(err){
       DB=prevDB;

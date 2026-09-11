@@ -1235,8 +1235,6 @@ function createEmptyDB(){
 
 function normalizeDB(data){
   const source=(data&&typeof data==='object')?data:{};
-  const normalized={};
-  let changed=!data||typeof data!=='object';
   const aliases={
     vehicles:['vehicles','vehicle'],
     maintenance:['maintenance'],
@@ -1247,6 +1245,13 @@ function normalizeDB(data){
     dailyPlans:['dailyPlans','dailyPlan','dayPlans'],
     echecks:['echecks','echeck','eChecks'],
   };
+  const normalized={};
+  const knownKeys=new Set(Object.values(aliases).flat());
+  let changed=!data||typeof data!=='object';
+  Object.entries(source).forEach(([key,value])=>{
+    if(knownKeys.has(key)||key==='__proto__'||key==='prototype'||key==='constructor')return;
+    normalized[key]=value;
+  });
   Object.keys(createEmptyDB()).forEach(key=>{
     const alias=aliases[key].find(name=>Array.isArray(source[name]));
     if(alias){

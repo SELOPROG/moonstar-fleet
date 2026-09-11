@@ -1264,7 +1264,7 @@ function normalizeDB(data){
   });
   const vehicleIds=new Set(normalized.vehicles.map(v=>v.id));
   ['maintenance','repairs','damages','tickets','handovers','dailyPlans','echecks'].forEach(key=>{
-    const filtered=normalized[key].filter(entry=>!entry?.vehicleId||vehicleIds.has(entry.vehicleId));
+    const filtered=normalized[key].filter(entry=>entry?.vehicleId&&vehicleIds.has(entry.vehicleId));
     if(filtered.length!==normalized[key].length)changed=true;
     normalized[key]=filtered;
   });
@@ -1924,7 +1924,7 @@ document.getElementById('modal-save').addEventListener('click',async()=>{
       const idx=DB.vehicles.findIndex(x=>x.id===existingId);
       if(idx===-1){toast('Fahrzeug konnte nicht gefunden werden.','error');return;}
       previousVehicle=DB.vehicles[idx];
-      DB.vehicles[idx]=entry;
+      DB.vehicles[idx]={...previousVehicle,...entry};
       saveData(DB);
       toast('Fahrzeug aktualisiert.');
     } else {
@@ -2101,7 +2101,7 @@ document.getElementById('entry-modal-save').addEventListener('click',()=>{
       const idx=DB[type].findIndex(x=>x.id===editId);
       if(idx===-1){toast('Eintrag konnte nicht gefunden werden.','error');return;}
       prevEntry=DB[type][idx];
-      DB[type][idx]=entry;
+      DB[type][idx]={...prevEntry,...entry};
       saveData(DB);
       toast('Eintrag aktualisiert.');
     } else {
@@ -2486,7 +2486,7 @@ document.getElementById('hm-save').addEventListener('click',()=>{
       const idx=DB.handovers.findIndex(x=>x.id===editId);
       if(idx===-1){toast('Protokoll konnte nicht gefunden werden.','error');return;}
       prevHandover=DB.handovers[idx];
-      DB.handovers[idx]=entry;
+      DB.handovers[idx]={...prevHandover,...entry};
       saveData(DB);
       toast('Protokoll aktualisiert.');
     } else {
@@ -2739,7 +2739,7 @@ document.getElementById('dp-modal-save').addEventListener('click',()=>{
       const idx=DB.dailyPlans.findIndex(x=>x.id===editId);
       if(idx===-1){toast('Tageseinsatzplan konnte nicht gefunden werden.','error');return;}
       prev=DB.dailyPlans[idx];
-      DB.dailyPlans[idx]=entry;
+      DB.dailyPlans[idx]={...prev,...entry};
       saveData(DB);
       toast('Tageseinsatzplan aktualisiert.');
     } else {
@@ -2954,7 +2954,7 @@ document.getElementById('ec-modal-save').addEventListener('click',()=>{
       const idx=DB.echecks.findIndex(x=>x.id===editId);
       if(idx===-1){toast('E-Check konnte nicht gefunden werden.','error');return;}
       prev=DB.echecks[idx];
-      DB.echecks[idx]=entry;
+      DB.echecks[idx]={...prev,...entry};
       saveData(DB);
       toast('E-Check aktualisiert.');
     } else {

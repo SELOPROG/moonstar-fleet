@@ -1245,7 +1245,7 @@ function normalizeDB(data){
     dailyPlans:['dailyPlans','dailyPlan','dayPlans'],
     echecks:['echecks','echeck','eChecks'],
   };
-  const normalized={};
+  const normalized=Object.create(null);
   const knownKeys=new Set(Object.values(aliases).flat());
   let changed=!data||typeof data!=='object';
   Object.entries(source).forEach(([key,value])=>{
@@ -2464,9 +2464,10 @@ document.getElementById('hm-save').addEventListener('click',()=>{
     return;
   }
   document.getElementById('sig-error').style.display='none';
+  const existingHandover=editId?DB.handovers.find(x=>x.id===editId):null;
 
   const signature=isSigEmpty()
-    ?(DB.handovers.find(x=>x.id===editId)?.signature||'')
+    ?(existingHandover?.signature||'')
     :sigCanvas.toDataURL('image/png');
 
   const entry={
@@ -2476,7 +2477,7 @@ document.getElementById('hm-save').addEventListener('click',()=>{
     vehiclePhotos:[..._hmVehiclePhotos],
     interiorPhotos:[..._hmInteriorPhotos],
     signature,
-    createdAt:editId?(DB.handovers.find(x=>x.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString(),
+    createdAt:editId?(existingHandover?.createdAt||new Date().toISOString()):new Date().toISOString(),
   };
 
   let prevHandover=null;
@@ -3071,6 +3072,10 @@ document.getElementById('importCsvFile').addEventListener('change',e=>{
       const recognizedFields=hdr.map(h=>fieldMap[h]).filter(Boolean);
       if(!recognizedFields.includes('name')||!recognizedFields.includes('plate')){
         toast('CSV benötigt mindestens die Spalten Name und Kennzeichen.','error');
+        return;
+      }
+      if(new Set(recognizedFields).size!==recognizedFields.length){
+        toast('CSV enthält doppelte erkannte Spalten.','error');
         return;
       }
       const prevVehicles=DB.vehicles.map(v=>({...v}));

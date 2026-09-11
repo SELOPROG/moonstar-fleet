@@ -1257,6 +1257,12 @@ function normalizeDB(data){
       changed=true;
     }
   });
+  const vehicleIds=new Set(normalized.vehicles.map(v=>v.id));
+  ['maintenance','repairs','damages','tickets','handovers','dailyPlans','echecks'].forEach(key=>{
+    const filtered=normalized[key].filter(entry=>!entry?.vehicleId||vehicleIds.has(entry.vehicleId));
+    if(filtered.length!==normalized[key].length)changed=true;
+    normalized[key]=filtered;
+  });
   return{db:normalized,changed};
 }
 
@@ -2373,6 +2379,7 @@ window.openHandoverModal=function(vehicleId,editId){
   document.getElementById('sig-error').style.display='none';
 
   const editObj=editId?DB.handovers.find(x=>x.id===editId):null;
+  if(editObj&&!DB.vehicles.some(v=>v.id===editObj.vehicleId)){toast('Zugehöriges Fahrzeug nicht gefunden.','error');return;}
   document.getElementById('hm-title').textContent=editId?'Übergabeprotokoll bearbeiten':'Übergabeprotokoll erstellen';
   document.getElementById('hm-id').value=editId||'';
   document.getElementById('hm-vehicle-id').value=vehicleId||'';
@@ -2667,6 +2674,7 @@ function renderDailyPlans(){
 function openDailyPlanModal(editId){
   if(!DB.vehicles.length){toast('Bitte zuerst ein Fahrzeug anlegen.','error');return;}
   const editObj=editId?DB.dailyPlans.find(x=>x.id===editId):null;
+  if(editObj&&!DB.vehicles.some(v=>v.id===editObj.vehicleId)){toast('Zugehöriges Fahrzeug nicht gefunden.','error');return;}
   document.getElementById('dp-modal-title').textContent=editId?'Tageseinsatzplan bearbeiten':'Tageseinsatzplan erstellen';
   document.getElementById('dp-id').value=editId||'';
 
@@ -2891,6 +2899,7 @@ window.toggleECheckCard=function(id){
 function openECheckModal(editId){
   if(!DB.vehicles.length){toast('Bitte zuerst ein Fahrzeug anlegen.','error');return;}
   const editObj=editId?DB.echecks.find(x=>x.id===editId):null;
+  if(editObj&&!DB.vehicles.some(v=>v.id===editObj.vehicleId)){toast('Zugehöriges Fahrzeug nicht gefunden.','error');return;}
   document.getElementById('ec-modal-title').textContent=editId?'E-Check bearbeiten':'E-Check durchführen';
   document.getElementById('ec-id').value=editId||'';
 
@@ -3054,6 +3063,11 @@ document.getElementById('importCsvFile').addEventListener('change',e=>{
         'baujahr':'year','status':'status','fahrer':'driver','kilometerstand':'km',
         'kraftstoff':'fuel','fin':'vin','notizen':'notes'
       };
+      const recognizedFields=hdr.map(h=>fieldMap[h]).filter(Boolean);
+      if(!recognizedFields.includes('name')||!recognizedFields.includes('plate')){
+        toast('CSV benötigt mindestens die Spalten Name und Kennzeichen.','error');
+        return;
+      }
       const prevVehicles=DB.vehicles.map(v=>({...v}));
       let added=0,updated=0;
       for(let i=1;i<rows.length;i++){

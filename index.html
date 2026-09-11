@@ -1237,9 +1237,25 @@ function normalizeDB(data){
   const source=(data&&typeof data==='object')?data:{};
   const normalized={};
   let changed=!data||typeof data!=='object';
+  const aliases={
+    vehicles:['vehicles','vehicle'],
+    maintenance:['maintenance'],
+    repairs:['repairs'],
+    damages:['damages'],
+    tickets:['tickets'],
+    handovers:['handovers','handover'],
+    dailyPlans:['dailyPlans','dailyPlan','dayPlans'],
+    echecks:['echecks','echeck','eChecks'],
+  };
   Object.keys(createEmptyDB()).forEach(key=>{
-    if(Array.isArray(source[key]))normalized[key]=source[key];
-    else{normalized[key]=[];changed=true;}
+    const alias=aliases[key].find(name=>Array.isArray(source[name]));
+    if(alias){
+      normalized[key]=source[alias];
+      if(alias!==key)changed=true;
+    }else{
+      normalized[key]=[];
+      changed=true;
+    }
   });
   return{db:normalized,changed};
 }
@@ -2537,7 +2553,21 @@ function fileToDataUrl(file){
   });
 }
 
-function parseCsvRows(text){
+function detectCsvDelimiter(text){
+  let inQuotes=false, commas=0, semicolons=0;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"'){
+      if(inQuotes&&text[i+1]==='"')i++;
+      else inQuotes=!inQuotes;
+    }else if(!inQuotes&&ch===',')commas++;
+    else if(!inQuotes&&ch===';')semicolons++;
+    else if(!inQuotes&&(ch==='\n'||ch==='\r'))break;
+  }
+  return semicolons>commas?';':',';
+}
+
+function parseCsvRows(text,delimiter){
   const rows=[];
   let row=[],cell='',inQuotes=false;
   for(let i=0;i<text.length;i++){
@@ -2545,7 +2575,7 @@ function parseCsvRows(text){
     if(ch==='"'){
       if(inQuotes&&text[i+1]==='"'){cell+='"';i++;}
       else inQuotes=!inQuotes;
-    }else if((ch===';'||ch===',')&&!inQuotes){
+    }else if(ch===delimiter&&!inQuotes){
       row.push(cell);cell='';
     }else if((ch==='\n'||ch==='\r')&&!inQuotes){
       if(ch==='\r'&&text[i+1]==='\n')i++;
@@ -3004,7 +3034,7 @@ document.getElementById('importCsvFile').addEventListener('change',e=>{
   reader.onload=ev=>{
     try{
       const text=ev.target.result.replace(/^\uFEFF/,''); // strip BOM
-      const rows=parseCsvRows(text);
+      const rows=parseCsvRows(text,detectCsvDelimiter(text));
       if(rows.length<2){toast('CSV leer oder ungültig.','error');return;}
       const hdr=rows[0].map(h=>h.toLowerCase().trim());
       const fieldMap={
@@ -3020,8 +3050,14 @@ document.getElementById('importCsvFile').addEventListener('change',e=>{
         hdr.forEach((h,idx)=>{const key=fieldMap[h];if(key)obj[key]=vals[idx]||'';});
         if(!obj.name&&!obj.plate)continue;
         const existing=DB.vehicles.find(v=>v.plate&&v.plate===obj.plate);
-        if(existing){Object.assign(existing,obj);updated++;}
-        else{DB.vehicles.push({id:uid(),...obj,photo:''});added++;}
+        if(existing){
+          Object.assign(existing,Object.fromEntries(Object.entries(obj).filter(([,value])=>value!=='')));
+          updated++;
+        }else{
+          if(!obj.name||!obj.plate||!obj.brand||!obj.model)continue;
+          DB.vehicles.push({id:uid(),...obj,photo:''});
+          added++;
+        }
       }
       try{saveData(DB);}
       catch(err){

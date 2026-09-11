@@ -1748,7 +1748,7 @@ window.printHandover=function(id){
   const vehiclePhotosHtml=(h.vehiclePhotos&&h.vehiclePhotos.length)?h.vehiclePhotos.map((photo,i)=>`<img src="${photo.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Fahrzeugfoto ${i+1}">`).join(''):'<em>Keine Fotos beigefügt</em>';
   const interiorPhotosHtml=(h.interiorPhotos&&h.interiorPhotos.length)?h.interiorPhotos.map((photo,i)=>`<img src="${photo.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Innenraumfoto ${i+1}">`).join(''):'<em>Keine Fotos beigefügt</em>';
   const sigHtml=h.signature?`<img src="${h.signature}" style="max-width:320px;border:1px solid #ccc;border-radius:6px" alt="Unterschrift">`:'<em>Keine Unterschrift</em>';
-  const w=window.open('','_blank','width=800,height:650');
+  const w=window.open('','_blank','width=800,height=650');
   w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Übergabeprotokoll</title>
   <style>body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:780px;margin:0 auto}
   h1{font-size:1.4rem;margin-bottom:4px}h2{font-size:1rem;color:#555;margin-top:24px;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:4px}
@@ -1868,6 +1868,7 @@ document.getElementById('modal-save').addEventListener('click',async()=>{
   const fileInput=document.getElementById('v-photo-input');
   let photo='';
   const existingId=document.getElementById('v-id').value;
+  let previousVehicle=null;
   if(existingId){
     const existing=DB.vehicles.find(x=>x.id===existingId);
     photo=existing?.photo||'';
@@ -1895,6 +1896,7 @@ document.getElementById('modal-save').addEventListener('click',async()=>{
     if(existingId){
       const idx=DB.vehicles.findIndex(x=>x.id===existingId);
       if(idx===-1){toast('Fahrzeug konnte nicht gefunden werden.','error');return;}
+      previousVehicle=DB.vehicles[idx];
       DB.vehicles[idx]=entry;
       saveData(DB);
       toast('Fahrzeug aktualisiert.');
@@ -1905,6 +1907,10 @@ document.getElementById('modal-save').addEventListener('click',async()=>{
     }
   }catch(e){
     // saveData already showed the toast; revert in-memory change
+    if(existingId&&previousVehicle){
+      const idx=DB.vehicles.findIndex(x=>x.id===existingId);
+      if(idx!==-1)DB.vehicles[idx]=previousVehicle;
+    }
     if(!existingId)DB.vehicles.shift();
     return;
   }
@@ -2476,7 +2482,25 @@ document.getElementById('importFile').addEventListener('change',async e=>{
 document.getElementById('nav-reset').addEventListener('click',()=>{
   if(!confirm('Wirklich ALLE Daten löschen? Dies kann nicht rückgängig gemacht werden.'))return;
   localStorage.removeItem(SK);
-  DB={vehicles:[],maintenance:[],repairs:[],damages:[],tickets:[],handovers:[],dailyPlans:[],echecks:[]};
+  DB=createEmptyDB();
+  currentVehicleId=null;
+  filterSearch='';filterStatus='';filterBrand='';
+  hoFilterSearch='';hoFilterType='';hoFilterVehicle='';
+  dpFilterSearch='';dpFilterDate='';dpFilterVehicle='';
+  ecFilterSearch='';ecFilterVehicle='';ecFilterResult='';
+  document.getElementById('search-input').value='';
+  document.getElementById('filter-status').value='';
+  document.getElementById('filter-brand').value='';
+  document.getElementById('ho-search').value='';
+  document.getElementById('ho-filter-type').value='';
+  document.getElementById('ho-filter-vehicle').value='';
+  document.getElementById('dp-search').value='';
+  document.getElementById('dp-filter-date').value='';
+  document.getElementById('dp-filter-vehicle').value='';
+  document.getElementById('ec-search').value='';
+  document.getElementById('ec-filter-vehicle').value='';
+  document.getElementById('ec-filter-result').value='';
+  refreshDataViews();
   toast('Alle Daten gelöscht.');
   navigate('dashboard');
 });

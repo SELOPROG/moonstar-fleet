@@ -1036,7 +1036,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" id="hm-cancel">Abbrechen</button>
-      <button class="btn btn-primary" id="hm-save">Protokoll speichern</button>
+      <button type="button" class="btn btn-primary" id="hm-save">Protokoll speichern</button>
     </div>
   </div>
 </div>
@@ -2255,8 +2255,6 @@ document.getElementById('new-handover-global-btn').addEventListener('click',()=>
 let _hmDocs=[];   // [{name, data}]
 let _hmVehiclePhotos=[];   // [{name, data}]
 let _hmInteriorPhotos=[];   // [{name, data}]
-let _hmSigData=''; // dataURL from canvas
-
 // Signature pad setup
 const sigCanvas=document.getElementById('sig-canvas');
 const sigCtx=sigCanvas.getContext('2d');
@@ -2281,26 +2279,43 @@ window.addEventListener('resize',resizeSigCanvas);
 
 function sigPos(e){
   const rect=sigCanvas.getBoundingClientRect();
-  const touch=e.touches?e.touches[0]:e;
-  return{x:touch.clientX-rect.left,y:touch.clientY-rect.top};
+  return{x:e.clientX-rect.left,y:e.clientY-rect.top};
 }
-sigCanvas.addEventListener('mousedown',e=>{_sigDrawing=true;_sigLast=sigPos(e)});
-sigCanvas.addEventListener('mousemove',e=>{
+function drawSignaturePoint(point){
+  sigCtx.beginPath();
+  sigCtx.moveTo(point.x,point.y);
+  sigCtx.lineTo(point.x+0.01,point.y+0.01);
+  sigCtx.stroke();
+}
+function startSignature(e){
+  e.preventDefault();
+  _sigDrawing=true;
+  _sigLast=sigPos(e);
+  drawSignaturePoint(_sigLast);
+  document.getElementById('sig-error').style.display='none';
+  if(sigCanvas.setPointerCapture){
+    try{sigCanvas.setPointerCapture(e.pointerId);}catch{}
+  }
+}
+function moveSignature(e){
   if(!_sigDrawing)return;
+  e.preventDefault();
   const p=sigPos(e);
   sigCtx.beginPath();sigCtx.moveTo(_sigLast.x,_sigLast.y);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();
   _sigLast=p;
-});
-sigCanvas.addEventListener('mouseup',()=>{_sigDrawing=false});
-sigCanvas.addEventListener('mouseleave',()=>{_sigDrawing=false});
-sigCanvas.addEventListener('touchstart',e=>{e.preventDefault();_sigDrawing=true;_sigLast=sigPos(e)},{passive:false});
-sigCanvas.addEventListener('touchmove',e=>{
-  if(!_sigDrawing)return;e.preventDefault();
-  const p=sigPos(e);
-  sigCtx.beginPath();sigCtx.moveTo(_sigLast.x,_sigLast.y);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();
-  _sigLast=p;
-},{passive:false});
-sigCanvas.addEventListener('touchend',()=>{_sigDrawing=false});
+}
+function endSignature(e){
+  if(!_sigDrawing)return;
+  _sigDrawing=false;
+  if(sigCanvas.releasePointerCapture&&e?.pointerId!==undefined){
+    try{sigCanvas.releasePointerCapture(e.pointerId);}catch{}
+  }
+}
+sigCanvas.addEventListener('pointerdown',startSignature);
+sigCanvas.addEventListener('pointermove',moveSignature);
+sigCanvas.addEventListener('pointerup',endSignature);
+sigCanvas.addEventListener('pointercancel',endSignature);
+window.addEventListener('pointerup',endSignature);
 document.getElementById('sig-clear').addEventListener('click',()=>{
   sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
 });
@@ -2451,7 +2466,8 @@ document.getElementById('hm-close').addEventListener('click',closeHandoverModal)
 document.getElementById('hm-cancel').addEventListener('click',closeHandoverModal);
 document.getElementById('handover-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeHandoverModal()});
 
-document.getElementById('hm-save').addEventListener('click',()=>{
+function saveHandover(e){
+  e?.preventDefault?.();
   const vehicleId=document.getElementById('hm-vehicle-sel').value;
   const type=document.getElementById('hm-type').value;
   const date=document.getElementById('hm-date').value;
@@ -2507,7 +2523,9 @@ document.getElementById('hm-save').addEventListener('click',()=>{
   }
   closeHandoverModal();
   refreshDataViews(vehicleId);
-});
+}
+document.getElementById('hm-save').addEventListener('click',saveHandover);
+document.getElementById('handover-form').addEventListener('submit',saveHandover);
 
 /* ─── Import ──────────────────────────────────────────────────── */
 document.getElementById('importFile').addEventListener('change',async e=>{

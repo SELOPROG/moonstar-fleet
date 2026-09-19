@@ -575,6 +575,54 @@ tr:hover td{background:rgba(255,255,255,.025)}
 .badge-return{background:rgba(129,140,248,.13);color:#a5b4fc}
 /* large handover modal */
 #handover-modal .modal{max-width:780px}
+.accident-zone-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;
+}
+.accident-zone-btn{
+  padding:10px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);
+  background:rgba(255,255,255,.04);color:var(--text);cursor:pointer;font-weight:600;
+  transition:background .15s,border-color .15s,transform .15s;
+}
+.accident-zone-btn:hover{transform:translateY(-1px);border-color:var(--primary)}
+.accident-zone-btn.active{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.45);color:#fca5a5}
+.accident-zone-map{
+  position:relative;margin-top:12px;border:1px solid var(--border2);border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  min-height:260px;padding:18px;
+}
+.accident-car-shape{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:150px;height:240px;border:2px solid var(--border2);border-radius:70px 70px 50px 50px/90px 90px 40px 40px;
+  background:rgba(56,189,248,.05);
+}
+.accident-car-window{
+  position:absolute;left:50%;transform:translateX(-50%);
+  width:88px;height:136px;top:52px;border:1px solid rgba(255,255,255,.2);border-radius:34px;
+}
+.accident-map-point{
+  position:absolute;display:flex;align-items:center;justify-content:center;
+  width:54px;height:54px;border-radius:50%;border:1px solid var(--border2);
+  background:rgba(255,255,255,.06);cursor:pointer;font-size:.72rem;font-weight:700;color:var(--muted);
+  transition:background .15s,border-color .15s,color .15s,transform .15s;
+}
+.accident-map-point:hover{transform:scale(1.04);border-color:var(--primary)}
+.accident-map-point.active{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.55);color:#fecaca}
+.accident-map-point.front{left:50%;top:16px;transform:translateX(-50%)}
+.accident-map-point.rear{left:50%;bottom:16px;transform:translateX(-50%)}
+.accident-map-point.left{left:18px;top:50%;transform:translateY(-50%)}
+.accident-map-point.right{right:18px;top:50%;transform:translateY(-50%)}
+.accident-map-point.front-left{left:38px;top:46px}
+.accident-map-point.front-right{right:38px;top:46px}
+.accident-map-point.rear-left{left:38px;bottom:46px}
+.accident-map-point.rear-right{right:38px;bottom:46px}
+.accident-map-point.roof{left:50%;top:50%;transform:translate(-50%,-50%)}
+.accident-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px}
+.accident-photo-grid img{width:100%;height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--border)}
+.damage-badge{
+  display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;
+  font-size:.72rem;font-weight:700;background:rgba(239,68,68,.12);color:#fca5a5;margin:3px 4px 0 0;
+}
+#accident-modal .modal{max-width:920px}
 </style>
 </head>
 <body>
@@ -612,6 +660,10 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <div class="nav-item" data-view="tickets">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v6c0 5-3.8 7.7-9 9-5.2-1.3-9-4-9-9V9z"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>
       Bußgelder
+    </div>
+    <div class="nav-item" data-view="accidents">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Unfallberichte
     </div>
     <div class="nav-item" data-view="dailyplans">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/></svg>
@@ -790,6 +842,37 @@ tr:hover td{background:rgba(255,255,255,.025)}
         <button class="btn btn-secondary btn-sm" id="ticket-clear-filters">Filter löschen</button>
       </div>
       <div id="tickets-container"></div>
+    </div>
+
+    <!-- ─── ACCIDENT REPORTS ────────────────────────────────────── -->
+    <div class="view" id="view-accidents">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-size:1.2rem;font-weight:800">Europäische Unfallberichte</h2>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Unfälle mit Fotos, Unfallgegner und Schadensmarkierung dokumentieren</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="new-accident-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Neuer Unfallbericht
+        </button>
+      </div>
+      <div class="filter-bar" style="margin-bottom:16px">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" id="accident-search" placeholder="Suchen nach Ort, Fahrer, Gegner, Kennzeichen …">
+        </div>
+        <select class="filter-select" id="accident-filter-status">
+          <option value="">Alle Status</option>
+          <option value="Offen">Offen</option>
+          <option value="In Bearbeitung">In Bearbeitung</option>
+          <option value="Abgeschlossen">Abgeschlossen</option>
+        </select>
+        <select class="filter-select" id="accident-filter-vehicle">
+          <option value="">Alle Fahrzeuge</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="accident-clear-filters">Filter löschen</button>
+      </div>
+      <div id="accidents-container"></div>
     </div>
 
     <!-- ─── TAGESEINSATZPLAN ───────────────────────────────────── -->
@@ -1194,6 +1277,139 @@ tr:hover td{background:rgba(255,255,255,.025)}
   </div>
 </div>
 
+<!-- ═══ ACCIDENT REPORT MODAL ════════════════════════════════════ -->
+<div class="modal-overlay" id="accident-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="accident-modal-title">Unfallbericht erstellen</span>
+      <button class="btn btn-icon btn-ghost" id="accident-modal-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="accident-form">
+        <input type="hidden" id="accident-id">
+        <div class="form-grid" style="margin-bottom:18px">
+          <div class="form-group">
+            <label>Fahrzeug *</label>
+            <select class="form-control" id="accident-vehicle" required></select>
+          </div>
+          <div class="form-group">
+            <label>Fahrer *</label>
+            <input class="form-control" id="accident-driver" placeholder="Name des Fahrers" required>
+          </div>
+          <div class="form-group">
+            <label>Datum *</label>
+            <input class="form-control" id="accident-date" type="date" required>
+          </div>
+          <div class="form-group">
+            <label>Uhrzeit *</label>
+            <input class="form-control" id="accident-time" type="time" required>
+          </div>
+          <div class="form-group span2">
+            <label>Unfallort *</label>
+            <input class="form-control" id="accident-location" placeholder="Straße, Ort, Land" required>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select class="form-control" id="accident-status">
+              <option value="Offen">Offen</option>
+              <option value="In Bearbeitung">In Bearbeitung</option>
+              <option value="Abgeschlossen">Abgeschlossen</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Polizei informiert?</label>
+            <select class="form-control" id="accident-police">
+              <option value="Nein">Nein</option>
+              <option value="Ja">Ja</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Verletzte?</label>
+            <select class="form-control" id="accident-injured">
+              <option value="Nein">Nein</option>
+              <option value="Ja">Ja</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Wetter</label>
+            <input class="form-control" id="accident-weather" placeholder="z. B. trocken, Regen, Nebel">
+          </div>
+        </div>
+
+        <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:10px">Europäischer Unfallbericht</div>
+        <div class="form-grid" style="margin-bottom:18px">
+          <div class="form-group">
+            <label>Versicherungsnehmer</label>
+            <input class="form-control" id="accident-policyholder" placeholder="Name des Versicherungsnehmers">
+          </div>
+          <div class="form-group">
+            <label>Versicherung</label>
+            <input class="form-control" id="accident-insurer" placeholder="Versicherungsgesellschaft">
+          </div>
+          <div class="form-group">
+            <label>Unfallgegner</label>
+            <input class="form-control" id="accident-opponent-name" placeholder="Name Unfallgegner">
+          </div>
+          <div class="form-group">
+            <label>Kennzeichen Gegner</label>
+            <input class="form-control" id="accident-opponent-plate" placeholder="Kennzeichen">
+          </div>
+          <div class="form-group">
+            <label>Versicherung Gegner</label>
+            <input class="form-control" id="accident-opponent-insurer" placeholder="Versicherung Gegner">
+          </div>
+          <div class="form-group">
+            <label>Zeugen</label>
+            <input class="form-control" id="accident-witnesses" placeholder="Zeugen / Kontakte">
+          </div>
+          <div class="form-group span2">
+            <label>Unfallhergang / Bemerkungen</label>
+            <textarea class="form-control" id="accident-description" placeholder="Ablauf, Beteiligte, erste Einschätzung …"></textarea>
+          </div>
+          <div class="form-group span2">
+            <label>Skizze / Zusatznotizen</label>
+            <textarea class="form-control" id="accident-sketch-notes" placeholder="Skizze beschreiben, Fahrtrichtung, Kreuzung, Besonderheiten …"></textarea>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">Schadensmarkierung am Fahrzeug</div>
+          <div class="accident-zone-grid" id="accident-zone-grid"></div>
+          <div class="accident-zone-map">
+            <div class="accident-car-shape"><div class="accident-car-window"></div></div>
+            <button type="button" class="accident-map-point front" data-zone="Front">Front</button>
+            <button type="button" class="accident-map-point rear" data-zone="Heck">Heck</button>
+            <button type="button" class="accident-map-point left" data-zone="Links">Links</button>
+            <button type="button" class="accident-map-point right" data-zone="Rechts">Rechts</button>
+            <button type="button" class="accident-map-point front-left" data-zone="Vorne links">VL</button>
+            <button type="button" class="accident-map-point front-right" data-zone="Vorne rechts">VR</button>
+            <button type="button" class="accident-map-point rear-left" data-zone="Hinten links">HL</button>
+            <button type="button" class="accident-map-point rear-right" data-zone="Hinten rechts">HR</button>
+            <button type="button" class="accident-map-point roof" data-zone="Dach">Dach</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">Unfallfotos</div>
+          <div class="sig-tools" style="margin-top:0">
+            <input type="file" id="accident-photo-upload" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="display:none">
+            <input type="file" id="accident-photo-camera" accept="image/png,image/jpeg,image/webp,image/gif,image/*" capture="environment" style="display:none">
+            <button type="button" class="btn btn-secondary btn-sm" id="accident-photo-upload-btn">Fotos hochladen</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="accident-photo-camera-btn">Foto neu machen</button>
+          </div>
+          <div class="doc-preview-grid" id="accident-photos-preview"></div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="accident-modal-cancel">Abbrechen</button>
+      <button type="button" class="btn btn-primary" id="accident-modal-save">Unfallbericht speichern</button>
+    </div>
+  </div>
+</div>
+
 <!-- ─── Status-Detail Modal ───────────────────────────────────────── -->
 <div class="modal-overlay" id="status-modal">
   <div class="modal" style="max-width:640px">
@@ -1283,7 +1499,7 @@ function saveData(data){
 }
 
 function createEmptyDB(){
-  return{vehicles:[],maintenance:[],repairs:[],damages:[],tickets:[],handovers:[],dailyPlans:[],echecks:[]};
+  return{vehicles:[],maintenance:[],repairs:[],damages:[],tickets:[],handovers:[],dailyPlans:[],echecks:[],accidentReports:[]};
 }
 
 function normalizeDB(data){
@@ -1297,6 +1513,7 @@ function normalizeDB(data){
     handovers:['handovers','handover'],
     dailyPlans:['dailyPlans','dailyPlan','dayPlans'],
     echecks:['echecks','echeck','eChecks'],
+    accidentReports:['accidentReports','accidents','accidentEntries'],
   };
   const normalized=Object.create(null);
   const knownKeys=new Set(Object.values(aliases).flat());
@@ -1316,7 +1533,7 @@ function normalizeDB(data){
     }
   });
   const vehicleIds=new Set(normalized.vehicles.map(v=>v.id));
-  ['maintenance','repairs','damages','tickets','handovers','dailyPlans','echecks'].forEach(key=>{
+  ['maintenance','repairs','damages','tickets','handovers','dailyPlans','echecks','accidentReports'].forEach(key=>{
     const filtered=normalized[key].filter(entry=>entry?.vehicleId&&vehicleIds.has(entry.vehicleId));
     if(filtered.length!==normalized[key].length)changed=true;
     normalized[key]=filtered;
@@ -1371,11 +1588,15 @@ function seedDemo(){
     {id:'t2',vehicleId:'v2',date:'2025-02-07',reason:'Geschwindigkeitsüberschreitung 12 km/h',amount:'70.00',status:'Unbezahlt'},
     {id:'t3',vehicleId:'v6',date:'2025-05-22',reason:'Handy am Steuer',amount:'100.00',status:'Unbezahlt'},
   ];
+  const accidentReports=[
+    {id:'a1',vehicleId:'v1',driver:'Max Müller',date:'2025-08-14',time:'14:30',location:'Berlin, Landsberger Allee',status:'In Bearbeitung',police:'Ja',injured:'Nein',weather:'Regen',policyholder:'PLD Fuhrpark',insurer:'Muster Versicherung AG',opponentName:'Erik Sommer',opponentPlate:'B-ES 4421',opponentInsurer:'Europa Protect',witnesses:'Anna Klein, 0170 000000',description:'Auffahrunfall an Ampel, Stoßstange vorne links beschädigt.',sketchNotes:'Eigenes Fahrzeug stand, Gegner fuhr auf.',damageZones:['Front','Vorne links'],photos:[]},
+  ];
   DB.vehicles=vehicles;
   DB.maintenance=maintenance;
   DB.repairs=repairs;
   DB.damages=damages;
   DB.tickets=tickets;
+  DB.accidentReports=accidentReports;
 }
 
 /* ─── Navigation ──────────────────────────────────────────────── */
@@ -1393,7 +1614,7 @@ function navigate(view,vehicleId){
   });
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
 
-  const titles={dashboard:'Dashboard',vehicles:'Fahrzeuge',drivers:'Fahrer',detail:'Fahrzeugdetails',handovers:'Übergabeprotokolle',tickets:'Bußgelder',dailyplans:'Tageseinsatzplan',echecks:'E-Check'};
+  const titles={dashboard:'Dashboard',vehicles:'Fahrzeuge',drivers:'Fahrer',detail:'Fahrzeugdetails',handovers:'Übergabeprotokolle',tickets:'Bußgelder',accidents:'Unfallberichte',dailyplans:'Tageseinsatzplan',echecks:'E-Check'};
   document.getElementById('topbar-title').textContent=titles[targetView]||'';
 
   if(targetView==='detail'){
@@ -1407,6 +1628,7 @@ function navigate(view,vehicleId){
     if(targetView==='drivers')renderDrivers();
     if(targetView==='handovers')renderHandoversList();
     if(targetView==='tickets')renderTicketsView();
+    if(targetView==='accidents')renderAccidentReports();
     if(targetView==='dailyplans')renderDailyPlans();
     if(targetView==='echecks')renderEChecks();
   }
@@ -1420,6 +1642,7 @@ function refreshDataViews(detailVehicleId=currentVehicleId){
   renderDrivers();
   renderHandoversList();
   renderTicketsView();
+  renderAccidentReports();
   renderDailyPlans();
   renderEChecks();
   if(detailVehicleId&&DB.vehicles.some(v=>v.id===detailVehicleId))renderDetail(detailVehicleId);
@@ -1439,6 +1662,7 @@ function renderDashboard(){
     {label:'Offene Schäden',value:DB.damages.filter(d=>d.status==='Offen').length,cls:'red',action:()=>navigate('dashboard')},
     {label:'Übergaben gesamt',value:DB.handovers.length,cls:'orange',action:()=>navigate('handovers')},
     {label:'Offene Bußgelder',value:DB.tickets.filter(t=>t.status==='Unbezahlt').length,cls:'yellow',action:()=>navigate('tickets')},
+    {label:'Unfallberichte',value:(DB.accidentReports||[]).length,cls:'orange',action:()=>navigate('accidents')},
     {label:'Pläne heute',value:(DB.dailyPlans||[]).filter(p=>p.date===new Date().toISOString().slice(0,10)).length,cls:'blue',action:()=>navigate('dailyplans')},
     {label:'E-Checks (Mängel)',value:(DB.echecks||[]).filter(e=>echeckResult(e.checks)==='fail').length,cls:'red',action:()=>navigate('echecks')},
   ];
@@ -1479,6 +1703,7 @@ function renderDashboard(){
   const recentM=DB.maintenance.slice(-5).reverse();
   const recentR=DB.repairs.filter(r=>r.status==='In Bearbeitung');
   const openDamages=DB.damages.filter(d=>d.status==='Offen').slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+  const recentAccidents=(DB.accidentReports||[]).slice().sort((a,b)=>new Date(`${b.date}T${b.time||'00:00'}`)-new Date(`${a.date}T${a.time||'00:00'}`)).slice(0,5);
 
   document.getElementById('dash-panels').innerHTML=`
     ${panels.join('')}
@@ -1497,6 +1722,24 @@ function renderDashboard(){
               <td><span onclick="navigate('detail','${v?.id}')" style="cursor:pointer;color:var(--primary)">${esc(v?.name||'—')}</span></td>
               <td>${esc(d.description)}</td>
               <td>${entryStatusBadge(d.status)}</td>
+            </tr>`}).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-header"><span class="card-title">Letzte Unfallberichte</span></div>
+      <div class="card-body" style="padding:0">
+        ${recentAccidents.length===0?`<div class="empty">Keine Unfallberichte</div>`:`
+        <div class="table-wrap"><table>
+          <thead><tr><th>Datum</th><th>Fahrzeug</th><th>Fahrer</th><th>Ort</th><th>Status</th></tr></thead>
+          <tbody>${recentAccidents.map(a=>{const v=DB.vehicles.find(x=>x.id===a.vehicleId);return`
+            <tr>
+              <td>${fmtDate(a.date)}${a.time?` · ${esc(a.time)}`:''}</td>
+              <td><span onclick="navigate('detail','${v?.id}')" style="cursor:pointer;color:var(--primary)">${esc(v?.name||'—')}</span></td>
+              <td>${esc(a.driver||'—')}</td>
+              <td>${esc(a.location||'—')}</td>
+              <td>${entryStatusBadge(a.status)}</td>
             </tr>`}).join('')}
           </tbody>
         </table></div>`}
@@ -1544,6 +1787,7 @@ function renderDashboard(){
 let filterSearch='', filterStatus='', filterBrand='';
 let driverSearch='';
 let ticketFilterSearch='', ticketFilterStatus='', ticketFilterVehicle='';
+let accidentFilterSearch='', accidentFilterStatus='', accidentFilterVehicle='';
 
 function renderVehicles(){
   // populate brand filter
@@ -1667,6 +1911,65 @@ function renderTicketsView(){
     </div>`}).join('')}</div>`;
 }
 
+const ACCIDENT_DAMAGE_ZONES=['Front','Heck','Links','Rechts','Vorne links','Vorne rechts','Hinten links','Hinten rechts','Dach'];
+
+function renderAccidentList(list,compact=false){
+  if(!list.length)return emptyState('Keine Unfallberichte vorhanden');
+  const sorted=[...list].sort((a,b)=>new Date(`${b.date}T${b.time||'00:00'}`)-new Date(`${a.date}T${a.time||'00:00'}`));
+  return`<div class="entry-list">${sorted.map(a=>{
+    const v=DB.vehicles.find(x=>x.id===a.vehicleId);
+    return`<div class="handover-card">
+      <div class="handover-card-header" onclick="toggleAccidentCard('${compact?'detail-':''}${a.id}')">
+        <div style="flex:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          ${entryStatusBadge(a.status)}
+          <strong style="font-size:.9rem">${fmtDate(a.date)}${a.time?` · ${esc(a.time)}`:''}</strong>
+          <span onclick="event.stopPropagation();navigate('detail','${a.vehicleId}')" style="font-size:.82rem;color:var(--primary);cursor:pointer;font-weight:600">${esc(v?.name||'?')} (${esc(v?.plate||'?')})</span>
+          <span style="font-size:.82rem;color:var(--muted)">Fahrer: ${esc(a.driver||'—')}</span>
+          <span style="font-size:.82rem;color:var(--muted2)">${esc(a.location||'—')}</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openAccidentModal('${a.vehicleId}','${a.id}')">✏</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deleteAccidentReport('${a.id}')">✕</button>
+        </div>
+      </div>
+      <div class="handover-card-body" id="acb-${compact?'detail-':''}${a.id}">
+        <div class="handover-info-grid">
+          <div class="handover-info-item"><label>Unfallort</label><span>${esc(a.location||'—')}</span></div>
+          <div class="handover-info-item"><label>Fahrer</label><span>${esc(a.driver||'—')}</span></div>
+          <div class="handover-info-item"><label>Polizei</label><span>${esc(a.police||'Nein')}</span></div>
+          <div class="handover-info-item"><label>Verletzte</label><span>${esc(a.injured||'Nein')}</span></div>
+          ${a.opponentName?`<div class="handover-info-item"><label>Unfallgegner</label><span>${esc(a.opponentName)}${a.opponentPlate?` (${esc(a.opponentPlate)})`:''}</span></div>`:''}
+          ${a.opponentInsurer?`<div class="handover-info-item"><label>Versicherung Gegner</label><span>${esc(a.opponentInsurer)}</span></div>`:''}
+          ${a.witnesses?`<div class="handover-info-item" style="grid-column:1/-1"><label>Zeugen</label><span>${esc(a.witnesses)}</span></div>`:''}
+          ${a.description?`<div class="handover-info-item" style="grid-column:1/-1"><label>Hergang</label><span>${esc(a.description)}</span></div>`:''}
+          ${a.sketchNotes?`<div class="handover-info-item" style="grid-column:1/-1"><label>Skizze / Zusatznotizen</label><span>${esc(a.sketchNotes)}</span></div>`:''}
+        </div>
+        ${a.damageZones&&a.damageZones.length?`<div style="margin-bottom:12px"><div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Markierte Schäden</div>${a.damageZones.map(zone=>`<span class="damage-badge">${esc(zone)}</span>`).join('')}</div>`:''}
+        ${a.photos&&a.photos.length?`<div><div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Unfallfotos (${a.photos.length})</div><div class="accident-photo-grid">${a.photos.map((photo,i)=>`<img src="${photo.data}" alt="${esc(photo.name||'Unfallfoto '+(i+1))}">`).join('')}</div></div>`:''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderAccidentReports(){
+  const vehicleSel=document.getElementById('accident-filter-vehicle');
+  const prevVehicle=vehicleSel.value;
+  vehicleSel.innerHTML=`<option value="">Alle Fahrzeuge</option>`+DB.vehicles.map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+  if(prevVehicle)vehicleSel.value=prevVehicle;
+
+  let list=[...(DB.accidentReports||[])];
+  if(accidentFilterSearch){
+    const q=accidentFilterSearch.toLowerCase();
+    list=list.filter(a=>{
+      const v=DB.vehicles.find(x=>x.id===a.vehicleId);
+      return [a.location,a.driver,a.opponentName,a.opponentPlate,a.description,v?.name,v?.plate].some(f=>(f||'').toLowerCase().includes(q));
+    });
+  }
+  if(accidentFilterStatus)list=list.filter(a=>a.status===accidentFilterStatus);
+  if(accidentFilterVehicle)list=list.filter(a=>a.vehicleId===accidentFilterVehicle);
+  document.getElementById('accidents-container').innerHTML=renderAccidentList(list,false);
+}
+
 /* ─── Vehicle detail ──────────────────────────────────────────── */
 function renderDetail(id){
   const v=DB.vehicles.find(x=>x.id===id);
@@ -1677,6 +1980,7 @@ function renderDetail(id){
   const dList=DB.damages.filter(x=>x.vehicleId===id);
   const tList=DB.tickets.filter(x=>x.vehicleId===id);
   const hoList=DB.handovers.filter(x=>x.vehicleId===id);
+  const aList=(DB.accidentReports||[]).filter(x=>x.vehicleId===id);
 
   const photoHtml=v.photo
     ?`<img class="detail-photo" src="${v.photo}" alt="${esc(v.name)}">`
@@ -1710,6 +2014,7 @@ function renderDetail(id){
       <div class="tab" data-tab="repair">Reparaturen (${rList.length})</div>
       <div class="tab" data-tab="damage">Schäden (${dList.length})</div>
       <div class="tab" data-tab="ticket">Bußgelder (${tList.length})</div>
+      <div class="tab" data-tab="accident">Unfälle (${aList.length})</div>
       <div class="tab" data-tab="handover">Übergaben (${hoList.length})</div>
     </div>
 
@@ -1736,6 +2041,12 @@ function renderDetail(id){
         <button class="btn btn-primary btn-sm" onclick="openEntryModal('tickets','${id}')">+ Bußgeld hinzufügen</button>
       </div>
       ${renderTicketList(tList)}
+    </div>
+    <div class="tab-panel" id="tab-accident">
+      <div style="margin-bottom:14px">
+        <button class="btn btn-primary btn-sm" onclick="openAccidentModal('${id}')">+ Unfallbericht hinzufügen</button>
+      </div>
+      ${renderAccidentList(aList,true)}
     </div>
     <div class="tab-panel" id="tab-handover">
       <div style="margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -2099,9 +2410,9 @@ function confirmDeleteVehicle(id){
   if(!v)return;
   if(!confirm(`Fahrzeug "${v.name}" (${v.plate}) wirklich löschen?\nAlle zugehörigen Einträge werden ebenfalls gelöscht.`))return;
   const prevCollections={};
-  ['vehicles','maintenance','repairs','damages','tickets','handovers','dailyPlans','echecks'].forEach(k=>{prevCollections[k]=DB[k]});
+  ['vehicles','maintenance','repairs','damages','tickets','handovers','dailyPlans','echecks','accidentReports'].forEach(k=>{prevCollections[k]=DB[k]});
   DB.vehicles=DB.vehicles.filter(x=>x.id!==id);
-  ['maintenance','repairs','damages','tickets','handovers','dailyPlans','echecks'].forEach(k=>{DB[k]=DB[k].filter(x=>x.vehicleId!==id)});
+  ['maintenance','repairs','damages','tickets','handovers','dailyPlans','echecks','accidentReports'].forEach(k=>{DB[k]=DB[k].filter(x=>x.vehicleId!==id)});
   try{saveData(DB);}
   catch(e){
     Object.keys(prevCollections).forEach(k=>{DB[k]=prevCollections[k]});
@@ -2727,6 +3038,7 @@ document.getElementById('nav-reset').addEventListener('click',()=>{
   driverSearch='';
   hoFilterSearch='';hoFilterType='';hoFilterVehicle='';
   ticketFilterSearch='';ticketFilterStatus='';ticketFilterVehicle='';
+  accidentFilterSearch='';accidentFilterStatus='';accidentFilterVehicle='';
   dpFilterSearch='';dpFilterDate='';dpFilterVehicle='';
   ecFilterSearch='';ecFilterVehicle='';ecFilterResult='';
   document.getElementById('search-input').value='';
@@ -2739,6 +3051,9 @@ document.getElementById('nav-reset').addEventListener('click',()=>{
   document.getElementById('ticket-search').value='';
   document.getElementById('ticket-filter-status').value='';
   document.getElementById('ticket-filter-vehicle').value='';
+  document.getElementById('accident-search').value='';
+  document.getElementById('accident-filter-status').value='';
+  document.getElementById('accident-filter-vehicle').value='';
   document.getElementById('dp-search').value='';
   document.getElementById('dp-filter-date').value='';
   document.getElementById('dp-filter-vehicle').value='';
@@ -3234,6 +3549,209 @@ document.getElementById('ec-clear-filters').addEventListener('click',()=>{
   document.getElementById('ec-filter-vehicle').value='';
   document.getElementById('ec-filter-result').value='';
   renderEChecks();
+});
+
+/* ─── Accident reports ─────────────────────────────────────────── */
+let _accidentPhotos=[];
+let _accidentDamageZones=new Set();
+
+function renderAccidentPhotoPreviews(){
+  renderUploadPreviews(_accidentPhotos,'accident-photos-preview','removeAccidentPhoto','Unfallfoto');
+}
+window.removeAccidentPhoto=function(i){_accidentPhotos.splice(i,1);renderAccidentPhotoPreviews();};
+
+function renderAccidentZoneControls(){
+  const grid=document.getElementById('accident-zone-grid');
+  grid.innerHTML=ACCIDENT_DAMAGE_ZONES.map(zone=>`<button type="button" class="accident-zone-btn${_accidentDamageZones.has(zone)?' active':''}" data-zone="${esc(zone)}">${esc(zone)}</button>`).join('');
+  document.querySelectorAll('#accident-zone-grid .accident-zone-btn, #accident-modal .accident-map-point').forEach(btn=>{
+    btn.classList.toggle('active',_accidentDamageZones.has(btn.dataset.zone));
+  });
+}
+function toggleAccidentZone(zone){
+  if(_accidentDamageZones.has(zone))_accidentDamageZones.delete(zone);
+  else _accidentDamageZones.add(zone);
+  renderAccidentZoneControls();
+}
+document.querySelectorAll('#accident-modal .accident-map-point').forEach(btn=>{
+  btn.addEventListener('click',()=>toggleAccidentZone(btn.dataset.zone));
+});
+document.getElementById('accident-zone-grid').addEventListener('click',e=>{
+  const btn=e.target.closest('.accident-zone-btn');
+  if(!btn)return;
+  toggleAccidentZone(btn.dataset.zone);
+});
+
+function bindAccidentPhotoInput(buttonId,inputId){
+  document.getElementById(buttonId).addEventListener('click',()=>document.getElementById(inputId).click());
+  document.getElementById(inputId).addEventListener('change',async e=>{
+    const files=Array.from(e.target.files);
+    const safeImageTypes=new Set(['image/png','image/jpeg','image/webp','image/gif']);
+    for(const f of files){
+      if(!safeImageTypes.has(f.type)){toast('Bitte nur PNG, JPG, WEBP oder GIF hochladen.','error');continue;}
+      const data=await fileToDataUrl(f);
+      _accidentPhotos.push({name:f.name,data});
+    }
+    renderAccidentPhotoPreviews();
+    e.target.value='';
+  });
+}
+bindAccidentPhotoInput('accident-photo-upload-btn','accident-photo-upload');
+bindAccidentPhotoInput('accident-photo-camera-btn','accident-photo-camera');
+
+function populateAccidentVehicleSelect(selectedId){
+  const sel=document.getElementById('accident-vehicle');
+  sel.innerHTML=DB.vehicles.map(v=>`<option value="${v.id}"${v.id===selectedId?' selected':''}>${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+}
+function syncAccidentDriverFromVehicle(force=false){
+  const vehicleId=document.getElementById('accident-vehicle').value;
+  const vehicle=DB.vehicles.find(v=>v.id===vehicleId);
+  const driverInput=document.getElementById('accident-driver');
+  if(vehicle&&(force||!driverInput.value.trim()))driverInput.value=vehicle.driver||'';
+}
+document.getElementById('accident-vehicle').addEventListener('change',()=>syncAccidentDriverFromVehicle(false));
+
+function resetAccidentModalState(){
+  document.getElementById('accident-form').reset();
+  document.getElementById('accident-id').value='';
+  _accidentPhotos.length=0;
+  _accidentDamageZones=new Set();
+  renderAccidentPhotoPreviews();
+  renderAccidentZoneControls();
+}
+
+function openAccidentModal(vehicleId,editId){
+  if(!DB.vehicles.length){toast('Bitte zuerst ein Fahrzeug anlegen.','error');return;}
+  const editObj=editId?(DB.accidentReports||[]).find(x=>x.id===editId):null;
+  if(editObj&&!DB.vehicles.some(v=>v.id===editObj.vehicleId)){toast('Zugehöriges Fahrzeug nicht gefunden.','error');return;}
+  resetAccidentModalState();
+  document.getElementById('accident-modal-title').textContent=editId?'Unfallbericht bearbeiten':'Unfallbericht erstellen';
+  document.getElementById('accident-id').value=editId||'';
+  populateAccidentVehicleSelect(vehicleId||(editObj?.vehicleId)||DB.vehicles[0]?.id||'');
+  if(editObj){
+    document.getElementById('accident-vehicle').value=editObj.vehicleId;
+    document.getElementById('accident-driver').value=editObj.driver||'';
+    document.getElementById('accident-date').value=editObj.date||'';
+    document.getElementById('accident-time').value=editObj.time||'';
+    document.getElementById('accident-location').value=editObj.location||'';
+    document.getElementById('accident-status').value=editObj.status||'Offen';
+    document.getElementById('accident-police').value=editObj.police||'Nein';
+    document.getElementById('accident-injured').value=editObj.injured||'Nein';
+    document.getElementById('accident-weather').value=editObj.weather||'';
+    document.getElementById('accident-policyholder').value=editObj.policyholder||'';
+    document.getElementById('accident-insurer').value=editObj.insurer||'';
+    document.getElementById('accident-opponent-name').value=editObj.opponentName||'';
+    document.getElementById('accident-opponent-plate').value=editObj.opponentPlate||'';
+    document.getElementById('accident-opponent-insurer').value=editObj.opponentInsurer||'';
+    document.getElementById('accident-witnesses').value=editObj.witnesses||'';
+    document.getElementById('accident-description').value=editObj.description||'';
+    document.getElementById('accident-sketch-notes').value=editObj.sketchNotes||'';
+    _accidentPhotos.push(...(editObj.photos?[...editObj.photos]:[]));
+    _accidentDamageZones=new Set(editObj.damageZones||[]);
+  }else{
+    document.getElementById('accident-date').value=new Date().toISOString().slice(0,10);
+    document.getElementById('accident-status').value='Offen';
+    document.getElementById('accident-police').value='Nein';
+    document.getElementById('accident-injured').value='Nein';
+    syncAccidentDriverFromVehicle(true);
+  }
+  renderAccidentPhotoPreviews();
+  renderAccidentZoneControls();
+  document.getElementById('accident-modal').classList.add('open');
+}
+window.openAccidentModal=openAccidentModal;
+
+function closeAccidentModal(){
+  resetAccidentModalState();
+  document.getElementById('accident-modal').classList.remove('open');
+}
+document.getElementById('accident-modal-close').addEventListener('click',closeAccidentModal);
+document.getElementById('accident-modal-cancel').addEventListener('click',closeAccidentModal);
+document.getElementById('accident-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAccidentModal()});
+
+function saveAccidentReport(e){
+  e?.preventDefault?.();
+  const vehicleId=document.getElementById('accident-vehicle').value;
+  const editId=document.getElementById('accident-id').value;
+  const driver=document.getElementById('accident-driver').value.trim();
+  const date=document.getElementById('accident-date').value;
+  const time=document.getElementById('accident-time').value;
+  const location=document.getElementById('accident-location').value.trim();
+  if(!vehicleId||!driver||!date||!time||!location){toast('Bitte Fahrzeug, Fahrer, Datum, Uhrzeit und Unfallort ausfüllen.','error');return;}
+  const existing=editId?(DB.accidentReports||[]).find(x=>x.id===editId):null;
+  const entry={
+    id:editId||uid(),
+    vehicleId,driver,date,time,location,
+    status:document.getElementById('accident-status').value,
+    police:document.getElementById('accident-police').value,
+    injured:document.getElementById('accident-injured').value,
+    weather:document.getElementById('accident-weather').value.trim(),
+    policyholder:document.getElementById('accident-policyholder').value.trim(),
+    insurer:document.getElementById('accident-insurer').value.trim(),
+    opponentName:document.getElementById('accident-opponent-name').value.trim(),
+    opponentPlate:document.getElementById('accident-opponent-plate').value.trim(),
+    opponentInsurer:document.getElementById('accident-opponent-insurer').value.trim(),
+    witnesses:document.getElementById('accident-witnesses').value.trim(),
+    description:document.getElementById('accident-description').value.trim(),
+    sketchNotes:document.getElementById('accident-sketch-notes').value.trim(),
+    damageZones:[..._accidentDamageZones],
+    photos:[..._accidentPhotos],
+    createdAt:editId?(existing?.createdAt||new Date().toISOString()):new Date().toISOString(),
+  };
+  let prev=null;
+  try{
+    if(editId){
+      const idx=DB.accidentReports.findIndex(x=>x.id===editId);
+      if(idx===-1){toast('Unfallbericht konnte nicht gefunden werden.','error');return;}
+      prev=DB.accidentReports[idx];
+      DB.accidentReports[idx]={...prev,...entry};
+      saveData(DB);
+      toast('Unfallbericht aktualisiert.');
+    }else{
+      DB.accidentReports.unshift(entry);
+      saveData(DB);
+      toast('Unfallbericht gespeichert.');
+    }
+  }catch(err){
+    if(editId&&prev){
+      const idx=DB.accidentReports.findIndex(x=>x.id===editId);
+      if(idx!==-1)DB.accidentReports[idx]=prev;
+    }else if(!editId){
+      DB.accidentReports.shift();
+    }
+    return;
+  }
+  closeAccidentModal();
+  refreshDataViews(vehicleId);
+}
+document.getElementById('accident-modal-save').addEventListener('click',saveAccidentReport);
+document.getElementById('accident-form').addEventListener('submit',saveAccidentReport);
+
+window.toggleAccidentCard=function(id){
+  const el=document.getElementById('acb-'+id);
+  if(el)el.classList.toggle('open');
+};
+window.deleteAccidentReport=function(id){
+  const report=(DB.accidentReports||[]).find(x=>x.id===id);
+  if(!report)return;
+  if(!confirm('Diesen Unfallbericht wirklich löschen?'))return;
+  const prev=DB.accidentReports;
+  DB.accidentReports=DB.accidentReports.filter(x=>x.id!==id);
+  try{saveData(DB);}
+  catch(err){DB.accidentReports=prev;return;}
+  toast('Unfallbericht gelöscht.');
+  refreshDataViews(report.vehicleId);
+};
+
+document.getElementById('new-accident-btn').addEventListener('click',()=>openAccidentModal(null));
+document.getElementById('accident-search').addEventListener('input',e=>{accidentFilterSearch=e.target.value;renderAccidentReports()});
+document.getElementById('accident-filter-status').addEventListener('change',e=>{accidentFilterStatus=e.target.value;renderAccidentReports()});
+document.getElementById('accident-filter-vehicle').addEventListener('change',e=>{accidentFilterVehicle=e.target.value;renderAccidentReports()});
+document.getElementById('accident-clear-filters').addEventListener('click',()=>{
+  accidentFilterSearch='';accidentFilterStatus='';accidentFilterVehicle='';
+  document.getElementById('accident-search').value='';
+  document.getElementById('accident-filter-status').value='';
+  document.getElementById('accident-filter-vehicle').value='';
+  renderAccidentReports();
 });
 
 /* ─── CSV Export/Import ───────────────────────────────────────── */

@@ -601,9 +601,17 @@ tr:hover td{background:rgba(255,255,255,.025)}
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       Fahrzeuge
     </div>
+    <div class="nav-item" data-view="drivers">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+      Fahrer
+    </div>
     <div class="nav-item" data-view="handovers">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Übergabeprotokolle
+    </div>
+    <div class="nav-item" data-view="tickets">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v6c0 5-3.8 7.7-9 9-5.2-1.3-9-4-9-9V9z"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>
+      Bußgelder
     </div>
     <div class="nav-item" data-view="dailyplans">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/></svg>
@@ -698,6 +706,24 @@ tr:hover td{background:rgba(255,255,255,.025)}
       <div class="vehicle-grid" id="vehicle-grid"></div>
     </div>
 
+    <!-- ─── DRIVERS LIST ───────────────────────────────────────── -->
+    <div class="view" id="view-drivers">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-size:1.2rem;font-weight:800">Fahrerübersicht</h2>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Fahrer suchen und zugeordnete Fahrzeuge ansehen</p>
+        </div>
+      </div>
+      <div class="filter-bar" style="margin-bottom:16px">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" id="driver-search" placeholder="Suchen nach Fahrer oder Fahrzeug …">
+        </div>
+        <button class="btn btn-secondary btn-sm" id="driver-clear-filters">Filter löschen</button>
+      </div>
+      <div id="drivers-container"></div>
+    </div>
+
     <!-- ─── VEHICLE DETAIL ─────────────────────────────────────── -->
     <div class="view" id="view-detail">
       <div style="margin-bottom:18px">
@@ -737,6 +763,33 @@ tr:hover td{background:rgba(255,255,255,.025)}
         <button class="btn btn-secondary btn-sm" id="ho-clear-filters">Filter löschen</button>
       </div>
       <div id="handovers-list-container"></div>
+    </div>
+
+    <!-- ─── TICKETS LIST ───────────────────────────────────────── -->
+    <div class="view" id="view-tickets">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-size:1.2rem;font-weight:800">Bußgeldliste</h2>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Alle Strafzettel und Bußgelder im Überblick</p>
+        </div>
+      </div>
+      <div class="filter-bar" style="margin-bottom:16px">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" id="ticket-search" placeholder="Suchen nach Grund, Fahrzeug oder Kennzeichen …">
+        </div>
+        <select class="filter-select" id="ticket-filter-status">
+          <option value="">Alle Status</option>
+          <option value="Bezahlt">Bezahlt</option>
+          <option value="Unbezahlt">Unbezahlt</option>
+          <option value="In Bearbeitung">In Bearbeitung</option>
+        </select>
+        <select class="filter-select" id="ticket-filter-vehicle">
+          <option value="">Alle Fahrzeuge</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="ticket-clear-filters">Filter löschen</button>
+      </div>
+      <div id="tickets-container"></div>
     </div>
 
     <!-- ─── TAGESEINSATZPLAN ───────────────────────────────────── -->
@@ -1340,7 +1393,7 @@ function navigate(view,vehicleId){
   });
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
 
-  const titles={dashboard:'Dashboard',vehicles:'Fahrzeuge',detail:'Fahrzeugdetails',handovers:'Übergabeprotokolle',dailyplans:'Tageseinsatzplan',echecks:'E-Check'};
+  const titles={dashboard:'Dashboard',vehicles:'Fahrzeuge',drivers:'Fahrer',detail:'Fahrzeugdetails',handovers:'Übergabeprotokolle',tickets:'Bußgelder',dailyplans:'Tageseinsatzplan',echecks:'E-Check'};
   document.getElementById('topbar-title').textContent=titles[targetView]||'';
 
   if(targetView==='detail'){
@@ -1351,7 +1404,9 @@ function navigate(view,vehicleId){
     document.getElementById('view-'+targetView).classList.add('active');
     if(targetView==='dashboard')renderDashboard();
     if(targetView==='vehicles')renderVehicles();
+    if(targetView==='drivers')renderDrivers();
     if(targetView==='handovers')renderHandoversList();
+    if(targetView==='tickets')renderTicketsView();
     if(targetView==='dailyplans')renderDailyPlans();
     if(targetView==='echecks')renderEChecks();
   }
@@ -1362,7 +1417,9 @@ function navigate(view,vehicleId){
 function refreshDataViews(detailVehicleId=currentVehicleId){
   renderDashboard();
   renderVehicles();
+  renderDrivers();
   renderHandoversList();
+  renderTicketsView();
   renderDailyPlans();
   renderEChecks();
   if(detailVehicleId&&DB.vehicles.some(v=>v.id===detailVehicleId))renderDetail(detailVehicleId);
@@ -1379,8 +1436,9 @@ function renderDashboard(){
     {label:'In Werkstatt',value:counts['In Werkstatt']||0,cls:'yellow',action:()=>openStatusModal('In Werkstatt',vs.filter(v=>v.status==='In Werkstatt'))},
     {label:'Abgemeldet',value:counts['Abgemeldet']||0,cls:'',action:()=>openStatusModal('Abgemeldet',vs.filter(v=>v.status==='Abgemeldet'))},
     {label:'Reserve',value:counts['Reserve']||0,cls:'purple',action:()=>openStatusModal('Reserve',vs.filter(v=>v.status==='Reserve'))},
-    {label:'Offene Schäden',value:DB.damages.filter(d=>d.status==='Offen').length,cls:'red',action:()=>navigate('vehicles')},
+    {label:'Offene Schäden',value:DB.damages.filter(d=>d.status==='Offen').length,cls:'red',action:()=>navigate('dashboard')},
     {label:'Übergaben gesamt',value:DB.handovers.length,cls:'orange',action:()=>navigate('handovers')},
+    {label:'Offene Bußgelder',value:DB.tickets.filter(t=>t.status==='Unbezahlt').length,cls:'yellow',action:()=>navigate('tickets')},
     {label:'Pläne heute',value:(DB.dailyPlans||[]).filter(p=>p.date===new Date().toISOString().slice(0,10)).length,cls:'blue',action:()=>navigate('dailyplans')},
     {label:'E-Checks (Mängel)',value:(DB.echecks||[]).filter(e=>echeckResult(e.checks)==='fail').length,cls:'red',action:()=>navigate('echecks')},
   ];
@@ -1420,9 +1478,30 @@ function renderDashboard(){
   // Recent maintenance
   const recentM=DB.maintenance.slice(-5).reverse();
   const recentR=DB.repairs.filter(r=>r.status==='In Bearbeitung');
+  const openDamages=DB.damages.filter(d=>d.status==='Offen').slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
 
   document.getElementById('dash-panels').innerHTML=`
     ${panels.join('')}
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-header">
+        <span class="card-title">Offene Schäden</span>
+        <button class="btn btn-secondary btn-sm" onclick="navigate('dashboard')">Aktualisieren</button>
+      </div>
+      <div class="card-body" style="padding:0">
+        ${openDamages.length===0?`<div class="empty">Keine offenen Schäden</div>`:`
+        <div class="table-wrap"><table>
+          <thead><tr><th>Datum</th><th>Fahrzeug</th><th>Beschreibung</th><th>Status</th></tr></thead>
+          <tbody>${openDamages.map(d=>{const v=DB.vehicles.find(x=>x.id===d.vehicleId);return`
+            <tr>
+              <td>${fmtDate(d.date)}</td>
+              <td><span onclick="navigate('detail','${v?.id}')" style="cursor:pointer;color:var(--primary)">${esc(v?.name||'—')}</span></td>
+              <td>${esc(d.description)}</td>
+              <td>${entryStatusBadge(d.status)}</td>
+            </tr>`}).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
     <div class="card" style="grid-column:1/-1">
       <div class="card-header"><span class="card-title">Letzte Wartungen</span></div>
       <div class="card-body" style="padding:0">
@@ -1463,6 +1542,8 @@ function renderDashboard(){
 
 /* ─── Vehicle list ────────────────────────────────────────────── */
 let filterSearch='', filterStatus='', filterBrand='';
+let driverSearch='';
+let ticketFilterSearch='', ticketFilterStatus='', ticketFilterVehicle='';
 
 function renderVehicles(){
   // populate brand filter
@@ -1518,6 +1599,72 @@ function renderVehicles(){
       </div>
     </div>
   `).join('');
+}
+
+function renderDrivers(){
+  const container=document.getElementById('drivers-container');
+  const list=DB.vehicles
+    .filter(v=>v.driver&&v.driver.trim())
+    .sort((a,b)=>a.driver.localeCompare(b.driver,'de',{sensitivity:'base'}));
+  const filtered=driverSearch
+    ?list.filter(v=>[v.driver,v.name,v.plate,v.brand,v.model].some(f=>(f||'').toLowerCase().includes(driverSearch.toLowerCase())))
+    :list;
+  if(!filtered.length){
+    container.innerHTML=emptyState(driverSearch?'Keine Fahrer zur Suche gefunden':'Keine Fahrer zugeordnet');
+    return;
+  }
+  container.innerHTML=`<div class="entry-list">${filtered.map(v=>`
+    <div class="entry-card" onclick="navigate('detail','${v.id}')" style="cursor:pointer">
+      <div class="entry-info">
+        <div class="entry-title">${esc(v.driver)}</div>
+        <div class="entry-meta">
+          Fahrzeug: <strong>${esc(v.name)}</strong> (${esc(v.plate)})<br>
+          ${esc(v.brand)} ${esc(v.model)}${v.status?' · '+esc(v.status):''}
+        </div>
+      </div>
+      <div class="entry-actions">
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();navigate('detail','${v.id}')">Fahrzeug</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function renderTicketsView(){
+  const vehicleSel=document.getElementById('ticket-filter-vehicle');
+  const prevVehicle=vehicleSel.value;
+  vehicleSel.innerHTML=`<option value="">Alle Fahrzeuge</option>`+DB.vehicles.map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.plate)})</option>`).join('');
+  if(prevVehicle)vehicleSel.value=prevVehicle;
+
+  let list=[...DB.tickets].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(ticketFilterSearch){
+    const q=ticketFilterSearch.toLowerCase();
+    list=list.filter(t=>{
+      const v=DB.vehicles.find(x=>x.id===t.vehicleId);
+      return [t.reason,t.status,v?.name,v?.plate].some(f=>(f||'').toLowerCase().includes(q));
+    });
+  }
+  if(ticketFilterStatus)list=list.filter(t=>t.status===ticketFilterStatus);
+  if(ticketFilterVehicle)list=list.filter(t=>t.vehicleId===ticketFilterVehicle);
+
+  const container=document.getElementById('tickets-container');
+  if(!list.length){
+    container.innerHTML=emptyState('Keine Bußgelder gefunden');
+    return;
+  }
+  container.innerHTML=`<div class="entry-list">${list.map(t=>{const v=DB.vehicles.find(x=>x.id===t.vehicleId);return`
+    <div class="entry-card">
+      <div class="entry-info">
+        <div class="entry-title">${esc(t.reason)}</div>
+        <div class="entry-meta">
+          ${fmtDate(t.date)} · ${fmtCurrency(t.amount)}<br>
+          Fahrzeug: <span onclick="navigate('detail','${v?.id}')" style="cursor:pointer;color:var(--primary);font-weight:600">${esc(v?.name||'—')} (${esc(v?.plate||'—')})</span>
+        </div>
+        ${entryStatusBadge(t.status)}
+      </div>
+      <div class="entry-actions">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEntryModal('tickets','${t.vehicleId}','${t.id}')">✏</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteEntry('tickets','${t.id}')">✕</button>
+      </div>
+    </div>`}).join('')}</div>`;
 }
 
 /* ─── Vehicle detail ──────────────────────────────────────────── */
@@ -2154,6 +2301,15 @@ document.getElementById('clear-filters').addEventListener('click',()=>{
   document.getElementById('filter-brand').value='';
   renderVehicles();
 });
+document.getElementById('driver-search').addEventListener('input',e=>{
+  driverSearch=e.target.value;
+  renderDrivers();
+});
+document.getElementById('driver-clear-filters').addEventListener('click',()=>{
+  driverSearch='';
+  document.getElementById('driver-search').value='';
+  renderDrivers();
+});
 
 /* ─── Sidebar nav ─────────────────────────────────────────────── */
 document.querySelectorAll('.nav-item[data-view]').forEach(el=>{
@@ -2248,6 +2404,16 @@ document.getElementById('ho-clear-filters').addEventListener('click',()=>{
   document.getElementById('ho-filter-type').value='';
   document.getElementById('ho-filter-vehicle').value='';
   renderHandoversList();
+});
+document.getElementById('ticket-search').addEventListener('input',e=>{ticketFilterSearch=e.target.value;renderTicketsView()});
+document.getElementById('ticket-filter-status').addEventListener('change',e=>{ticketFilterStatus=e.target.value;renderTicketsView()});
+document.getElementById('ticket-filter-vehicle').addEventListener('change',e=>{ticketFilterVehicle=e.target.value;renderTicketsView()});
+document.getElementById('ticket-clear-filters').addEventListener('click',()=>{
+  ticketFilterSearch='';ticketFilterStatus='';ticketFilterVehicle='';
+  document.getElementById('ticket-search').value='';
+  document.getElementById('ticket-filter-status').value='';
+  document.getElementById('ticket-filter-vehicle').value='';
+  renderTicketsView();
 });
 document.getElementById('new-handover-global-btn').addEventListener('click',()=>openHandoverModal(null));
 
@@ -2558,15 +2724,21 @@ document.getElementById('nav-reset').addEventListener('click',()=>{
   catch(e){DB=prevDB;return;}
   currentVehicleId=null;
   filterSearch='';filterStatus='';filterBrand='';
+  driverSearch='';
   hoFilterSearch='';hoFilterType='';hoFilterVehicle='';
+  ticketFilterSearch='';ticketFilterStatus='';ticketFilterVehicle='';
   dpFilterSearch='';dpFilterDate='';dpFilterVehicle='';
   ecFilterSearch='';ecFilterVehicle='';ecFilterResult='';
   document.getElementById('search-input').value='';
   document.getElementById('filter-status').value='';
   document.getElementById('filter-brand').value='';
+  document.getElementById('driver-search').value='';
   document.getElementById('ho-search').value='';
   document.getElementById('ho-filter-type').value='';
   document.getElementById('ho-filter-vehicle').value='';
+  document.getElementById('ticket-search').value='';
+  document.getElementById('ticket-filter-status').value='';
+  document.getElementById('ticket-filter-vehicle').value='';
   document.getElementById('dp-search').value='';
   document.getElementById('dp-filter-date').value='';
   document.getElementById('dp-filter-vehicle').value='';

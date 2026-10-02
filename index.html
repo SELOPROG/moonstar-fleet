@@ -516,13 +516,49 @@ tr:hover td{background:rgba(255,255,255,.025)}
 }
 
 /* ─── Handover / signature styles ───────────────────────────────── */
+.sig-panel{
+  border:1px solid var(--border2);border-radius:var(--radius);
+  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
+  padding:14px;
+}
+.sig-panel-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  flex-wrap:wrap;margin-bottom:6px;
+}
+.sig-required-badge{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+  font-size:.72rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase;
+  background:rgba(56,189,248,.12);color:var(--primary);
+}
 .sig-canvas-wrap{
   border:1px solid var(--border2);border-radius:var(--radius-sm);
-  background:#fff;position:relative;overflow:hidden;
+  background:#fff;position:relative;overflow:hidden;min-height:160px;
+  border-style:dashed;
+}
+.sig-canvas-wrap.has-signature{
+  border-style:solid;
+  box-shadow:0 0 0 1px rgba(56,189,248,.18) inset;
 }
 #sig-canvas{display:block;width:100%;cursor:crosshair;touch-action:none}
+.sig-placeholder{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:#64748b;font-size:.9rem;font-weight:600;pointer-events:none;
+  background:linear-gradient(180deg,rgba(248,250,252,.88),rgba(255,255,255,.66));
+}
 .sig-tools{
   display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap;
+}
+.driver-assignment-list{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;
+}
+.driver-assignment-chip{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+  background:rgba(56,189,248,.1);color:var(--primary);font-size:.76rem;font-weight:700;
+  cursor:pointer;border:1px solid rgba(56,189,248,.2);
+}
+.driver-assignment-chip:hover{transform:translateY(-1px);border-color:rgba(56,189,248,.45)}
+.driver-empty-assignments{
+  margin-top:10px;font-size:.78rem;color:var(--muted2);
 }
 .doc-preview-grid{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;
@@ -763,8 +799,12 @@ tr:hover td{background:rgba(255,255,255,.025)}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
         <div>
           <h2 style="font-size:1.2rem;font-weight:800">Fahrerübersicht</h2>
-          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Fahrer suchen und zugeordnete Fahrzeuge ansehen</p>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Fahrer-Stammdaten pflegen, suchen und zugeordnete Fahrzeuge ansehen</p>
         </div>
+        <button class="btn btn-primary btn-sm" id="new-driver-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Fahrer anlegen
+        </button>
       </div>
       <div class="filter-bar" style="margin-bottom:16px">
         <div class="search-wrap">
@@ -935,6 +975,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
   </div><!-- /content -->
 </div><!-- /main -->
 </div><!-- /app -->
+<datalist id="driver-suggestions"></datalist>
 
 <!-- ═══ VEHICLE MODAL ════════════════════════════════════════════ -->
 <div class="modal-overlay" id="vehicle-modal">
@@ -979,7 +1020,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
         </div>
         <div class="form-group">
           <label>Fahrer / Zuständige Person</label>
-          <input class="form-control" id="v-driver" placeholder="Name des Fahrers">
+          <input class="form-control" id="v-driver" list="driver-suggestions" placeholder="Name des Fahrers">
         </div>
         <div class="form-group">
           <label>Kilometerstand (km)</label>
@@ -1046,6 +1087,59 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <div class="modal-footer">
       <button class="btn btn-ghost" id="modal-cancel">Abbrechen</button>
       <button class="btn btn-primary" id="modal-save">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DRIVER MODAL ═════════════════════════════════════════════ -->
+<div class="modal-overlay" id="driver-modal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <span class="modal-title" id="driver-modal-title">Fahrer anlegen</span>
+      <button class="btn btn-icon btn-ghost" id="driver-modal-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="driver-form" class="form-grid">
+        <input type="hidden" id="driver-id">
+        <div class="form-group">
+          <label>Name *</label>
+          <input class="form-control" id="driver-name" placeholder="Vor- und Nachname" required>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-control" id="driver-status">
+            <option value="Aktiv">Aktiv</option>
+            <option value="Abwesend">Abwesend</option>
+            <option value="Inaktiv">Inaktiv</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Telefon</label>
+          <input class="form-control" id="driver-phone" placeholder="Telefonnummer">
+        </div>
+        <div class="form-group">
+          <label>E-Mail</label>
+          <input class="form-control" id="driver-email" type="email" placeholder="E-Mail-Adresse">
+        </div>
+        <div class="form-group">
+          <label>Personalnummer</label>
+          <input class="form-control" id="driver-employee-no" placeholder="z. B. F-102">
+        </div>
+        <div class="form-group">
+          <label>Führerscheinklasse</label>
+          <input class="form-control" id="driver-license-class" placeholder="z. B. B, BE, C1">
+        </div>
+        <div class="form-group span2">
+          <label>Bemerkungen</label>
+          <textarea class="form-control" id="driver-notes" placeholder="Zusätzliche Hinweise zum Fahrer …"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="driver-modal-cancel">Abbrechen</button>
+      <button type="button" class="btn btn-primary" id="driver-modal-save">Fahrer speichern</button>
     </div>
   </div>
 </div>
@@ -1130,7 +1224,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
           <div class="form-grid">
             <div class="form-group">
               <label>Fahrername</label>
-              <input class="form-control" id="hm-plan-driver" placeholder="Name des Fahrers">
+              <input class="form-control" id="hm-plan-driver" list="driver-suggestions" placeholder="Name des Fahrers">
             </div>
             <div class="form-group">
               <label>Kennzeichen</label>
@@ -1185,24 +1279,36 @@ tr:hover td{background:rgba(255,255,255,.025)}
 
         <!-- Signature pad -->
         <div>
-          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
-            Unterschrift des Empfängers *
+          <div class="sig-panel">
+            <div class="sig-panel-head">
+              <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)">
+                Unterschrift des Empfängers
+              </div>
+              <span class="sig-required-badge">Pflichtfeld</span>
+            </div>
+            <div style="font-size:.78rem;color:var(--muted2);margin-bottom:10px">
+              Bitte mit Maus oder Finger im Feld unterschreiben. Die Unterschrift wird direkt im Protokoll gespeichert.
+            </div>
+            <div class="sig-canvas-wrap" id="sig-wrap">
+              <div class="sig-placeholder" id="sig-placeholder">Hier unterschreiben</div>
+              <canvas id="sig-canvas" height="160"></canvas>
+            </div>
+            <div class="sig-tools">
+              <button type="button" class="btn btn-ghost btn-sm" id="sig-clear">Unterschrift löschen</button>
+              <span style="font-size:.75rem;color:var(--muted2)">Unterschrift ist zum Speichern erforderlich</span>
+            </div>
+            <div id="sig-error" style="font-size:.78rem;color:var(--danger);margin-top:4px;display:none">Bitte Unterschrift leisten.</div>
           </div>
-          <div class="sig-canvas-wrap" id="sig-wrap">
-            <canvas id="sig-canvas" height="160"></canvas>
-          </div>
-          <div class="sig-tools">
-            <button type="button" class="btn btn-ghost btn-sm" id="sig-clear">Unterschrift löschen</button>
-            <span style="font-size:.75rem;color:var(--muted2)">Mit Maus oder Finger unterschreiben</span>
-          </div>
-          <div id="sig-error" style="font-size:.78rem;color:var(--danger);margin-top:4px;display:none">Bitte Unterschrift leisten.</div>
         </div>
 
       </form>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" id="hm-cancel">Abbrechen</button>
-      <button type="button" class="btn btn-primary" id="hm-save">Protokoll speichern</button>
+      <button type="button" class="btn btn-primary" id="hm-save">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Übergabeprotokoll speichern
+      </button>
     </div>
   </div>
 </div>
@@ -1229,7 +1335,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
         </div>
         <div class="form-group">
           <label>Fahrername *</label>
-          <input class="form-control" id="dp-driver" placeholder="Name des Fahrers" required>
+          <input class="form-control" id="dp-driver" list="driver-suggestions" placeholder="Name des Fahrers" required>
         </div>
         <div class="form-group">
           <label>Dienstbeginn</label>
@@ -1326,7 +1432,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
           </div>
           <div class="form-group">
             <label>Fahrer *</label>
-            <input class="form-control" id="accident-driver" placeholder="Name des Fahrers" required>
+            <input class="form-control" id="accident-driver" list="driver-suggestions" placeholder="Name des Fahrers" required>
           </div>
           <div class="form-group">
             <label>Datum *</label>
@@ -1528,14 +1634,57 @@ function saveData(data){
   }
 }
 
+function driverNameKey(name){
+  return String(name||'').trim().toLocaleLowerCase('de-DE');
+}
+function createDriverRecord(name,overrides={}){
+  const trimmed=String(name||'').trim();
+  return{
+    id:overrides.id||uid(),
+    name:trimmed,
+    phone:overrides.phone||'',
+    email:overrides.email||'',
+    employeeNo:overrides.employeeNo||'',
+    licenseClass:overrides.licenseClass||'',
+    status:overrides.status||'Aktiv',
+    notes:overrides.notes||'',
+    autoCreated:Boolean(overrides.autoCreated),
+  };
+}
+function mergeDriversWithVehicleAssignments(drivers,vehicles){
+  const merged=[];
+  const seen=new Set();
+  let changed=!Array.isArray(drivers);
+  (Array.isArray(drivers)?drivers:[]).forEach(driver=>{
+    if(!driver||typeof driver!=='object'){changed=true;return;}
+    const name=String(driver.name||'').trim();
+    if(!name){changed=true;return;}
+    const key=driverNameKey(name);
+    if(seen.has(key)){changed=true;return;}
+    merged.push({...createDriverRecord(name),...driver,name,status:driver.status||'Aktiv'});
+    seen.add(key);
+  });
+  (Array.isArray(vehicles)?vehicles:[]).forEach(vehicle=>{
+    const name=String(vehicle?.driver||'').trim();
+    if(!name)return;
+    const key=driverNameKey(name);
+    if(seen.has(key))return;
+    merged.push(createDriverRecord(name,{autoCreated:true}));
+    seen.add(key);
+    changed=true;
+  });
+  merged.sort((a,b)=>a.name.localeCompare(b.name,'de',{sensitivity:'base'}));
+  return{drivers:merged,changed};
+}
 function createEmptyDB(){
-  return{vehicles:[],maintenance:[],repairs:[],damages:[],tickets:[],handovers:[],dailyPlans:[],echecks:[],accidentReports:[]};
+  return{vehicles:[],drivers:[],maintenance:[],repairs:[],damages:[],tickets:[],handovers:[],dailyPlans:[],echecks:[],accidentReports:[]};
 }
 
 function normalizeDB(data){
   const source=(data&&typeof data==='object')?data:{};
   const aliases={
     vehicles:['vehicles','vehicle'],
+    drivers:['drivers','driverMaster','driverStammdaten'],
     maintenance:['maintenance'],
     repairs:['repairs'],
     damages:['damages'],
@@ -1568,6 +1717,9 @@ function normalizeDB(data){
     if(filtered.length!==normalized[key].length)changed=true;
     normalized[key]=filtered;
   });
+  const mergedDrivers=mergeDriversWithVehicleAssignments(normalized.drivers,normalized.vehicles);
+  normalized.drivers=mergedDrivers.drivers;
+  if(mergedDrivers.changed)changed=true;
   return{db:normalized,changed};
 }
 
@@ -1579,11 +1731,13 @@ function initDB(){
     DB=createEmptyDB();
     seedDemo();
     saveData(DB);
+    renderDriverSuggestions();
     return;
   }
   const normalized=normalizeDB(loaded);
   DB=normalized.db;
   if(normalized.changed)saveData(DB);
+  renderDriverSuggestions();
 }
 
 /* ─── Demo seed data ──────────────────────────────────────────── */
@@ -1595,6 +1749,12 @@ function seedDemo(){
     {id:'v4',name:'Werkstattwagen',plate:'B-MS 3001',brand:'Renault',model:'Master dCi 150',year:'2018',status:'In Werkstatt',driver:'Tom Wagner',km:'189300',fuel:'Diesel',vin:'VF1MA000562123456',ownership:'Eigentum',purchaseType:'Finanzierung',paidOff:'Ja',financeProvider:'Sparkasse Berlin',notes:'Inspektion läuft – voraussichtlich fertig KW 35',photo:''},
     {id:'v5',name:'Altfahrzeug PKW',plate:'B-MS 4001',brand:'BMW',model:'3er 320d',year:'2012',status:'Abgemeldet',driver:'',km:'243100',fuel:'Diesel',vin:'WBA3B31060J123456',ownership:'Eigentum',purchaseType:'',paidOff:'Ja',financeProvider:'',notes:'Abgemeldet – Verkauf geplant',photo:''},
     {id:'v6',name:'Kombi Dienst',plate:'B-MS 1003',brand:'Volkswagen',model:'Passat Variant',year:'2022',status:'Im Dienst',driver:'Lisa Hoffmann',km:'21400',fuel:'Diesel',vin:'WVWZZZ3CZNP123456',ownership:'Leasing',purchaseType:'Leasing',paidOff:'Nein',financeProvider:'Alphabet Fuhrparkmanagement',notes:'',photo:''},
+  ];
+  const drivers=[
+    {id:'drv1',name:'Max Müller',phone:'0170 1234567',email:'max.mueller@example.com',employeeNo:'F-100',licenseClass:'B, BE',status:'Aktiv',notes:'Hauptfahrer Einsatzwagen 1'},
+    {id:'drv2',name:'Sandra Koch',phone:'0171 2345678',email:'sandra.koch@example.com',employeeNo:'F-101',licenseClass:'B',status:'Aktiv',notes:''},
+    {id:'drv3',name:'Tom Wagner',phone:'0172 3456789',email:'tom.wagner@example.com',employeeNo:'F-102',licenseClass:'B, C1',status:'Abwesend',notes:'Werkstattfahrzeug'},
+    {id:'drv4',name:'Lisa Hoffmann',phone:'0173 4567890',email:'lisa.hoffmann@example.com',employeeNo:'F-103',licenseClass:'B',status:'Aktiv',notes:''},
   ];
   const maintenance=[
     {id:'m1',vehicleId:'v1',date:'2024-03-15',title:'Ölwechsel',type:'Ölwechsel',status:'Erledigt',notes:'Shell Helix Ultra 5W-30',cost:'89.50'},
@@ -1622,6 +1782,7 @@ function seedDemo(){
     {id:'a1',vehicleId:'v1',driver:'Max Müller',date:'2025-08-14',time:'14:30',location:'Berlin, Landsberger Allee',status:'In Bearbeitung',police:'Ja',injured:'Nein',weather:'Regen',policyholder:'PLD Fuhrpark',insurer:'Muster Versicherung AG',opponentName:'Erik Sommer',opponentPlate:'B-ES 4421',opponentInsurer:'Europa Protect',witnesses:'Anna Klein, 0170 000000',description:'Auffahrunfall an Ampel, Stoßstange vorne links beschädigt.',sketchNotes:'Eigenes Fahrzeug stand, Gegner fuhr auf.',damageZones:['Front','Vorne links'],photos:[]},
   ];
   DB.vehicles=vehicles;
+  DB.drivers=mergeDriversWithVehicleAssignments(drivers,vehicles).drivers;
   DB.maintenance=maintenance;
   DB.repairs=repairs;
   DB.damages=damages;
@@ -1667,6 +1828,7 @@ function navigate(view,vehicleId){
 }
 
 function refreshDataViews(detailVehicleId=currentVehicleId){
+  renderDriverSuggestions();
   renderDashboard();
   renderVehicles();
   renderDrivers();
@@ -1876,31 +2038,70 @@ function renderVehicles(){
   `).join('');
 }
 
+function renderDriverSuggestions(){
+  const dataList=document.getElementById('driver-suggestions');
+  if(!dataList||!DB)return;
+  const names=mergeDriversWithVehicleAssignments(DB.drivers,DB.vehicles).drivers.map(driver=>driver.name);
+  dataList.innerHTML=names.map(name=>`<option value="${esc(name)}"></option>`).join('');
+}
+function getAssignedVehiclesForDriver(driverName){
+  const key=driverNameKey(driverName);
+  return DB.vehicles.filter(vehicle=>driverNameKey(vehicle.driver)===key);
+}
+function ensureDriverRecord(name){
+  const trimmed=String(name||'').trim();
+  if(!trimmed)return null;
+  const existing=(DB.drivers||[]).find(driver=>driverNameKey(driver.name)===driverNameKey(trimmed));
+  if(existing)return existing;
+  const entry=createDriverRecord(trimmed,{autoCreated:true});
+  DB.drivers.push(entry);
+  return entry;
+}
 function renderDrivers(){
   const container=document.getElementById('drivers-container');
-  const list=DB.vehicles
-    .filter(v=>v.driver&&v.driver.trim())
-    .sort((a,b)=>a.driver.localeCompare(b.driver,'de',{sensitivity:'base'}));
+  const list=mergeDriversWithVehicleAssignments(DB.drivers,DB.vehicles).drivers;
   const filtered=driverSearch
-    ?list.filter(v=>[v.driver,v.name,v.plate,v.brand,v.model].some(f=>(f||'').toLowerCase().includes(driverSearch.toLowerCase())))
+    ?list.filter(driver=>{
+      const assigned=getAssignedVehiclesForDriver(driver.name);
+      const haystack=[
+        driver.name,driver.phone,driver.email,driver.employeeNo,driver.licenseClass,driver.status,driver.notes,
+        ...assigned.flatMap(vehicle=>[vehicle.name,vehicle.plate,vehicle.brand,vehicle.model])
+      ];
+      return haystack.some(field=>(field||'').toLowerCase().includes(driverSearch.toLowerCase()));
+    })
     :list;
   if(!filtered.length){
-    container.innerHTML=emptyState(driverSearch?'Keine Fahrer zur Suche gefunden':'Keine Fahrer zugeordnet');
+    container.innerHTML=emptyState(driverSearch?'Keine Fahrer zur Suche gefunden':'Keine Fahrer-Stammdaten vorhanden');
     return;
   }
-  container.innerHTML=`<div class="entry-list">${filtered.map(v=>`
-    <div class="entry-card" onclick="navigate('detail','${v.id}')" style="cursor:pointer">
+  container.innerHTML=`<div class="entry-list">${filtered.map(driver=>{
+    const assigned=getAssignedVehiclesForDriver(driver.name);
+    return`
+    <div class="entry-card">
       <div class="entry-info">
-        <div class="entry-title">${esc(v.driver)}</div>
+        <div class="entry-title">${esc(driver.name)}</div>
         <div class="entry-meta">
-          Fahrzeug: <strong>${esc(v.name)}</strong> (${esc(v.plate)})<br>
-          ${esc(v.brand)} ${esc(v.model)}${v.status?' · '+esc(v.status):''}
+          ${driver.status?`Status: ${esc(driver.status)}`:'Status: Aktiv'}
+          ${driver.employeeNo?` · Personalnr.: ${esc(driver.employeeNo)}`:''}
+          ${driver.licenseClass?` · Führerschein: ${esc(driver.licenseClass)}`:''}<br>
+          ${driver.phone?`Telefon: ${esc(driver.phone)}`:'Telefon: —'}
+          ${driver.email?` · E-Mail: ${esc(driver.email)}`:''}
+          ${driver.notes?`<br>${esc(driver.notes)}`:''}
+          ${driver.autoCreated&&!driver.phone&&!driver.email&&!driver.employeeNo&&!driver.licenseClass&&!driver.notes?`<br><span style="color:var(--muted2)">Automatisch aus Fahrzeugzuordnung übernommen</span>`:''}
         </div>
+        ${assigned.length
+          ?`<div class="driver-assignment-list">${assigned.map(vehicle=>`
+            <button type="button" class="driver-assignment-chip" onclick="navigate('detail','${vehicle.id}')">
+              ${esc(vehicle.plate)} · ${esc(vehicle.name)}
+            </button>`).join('')}</div>`
+          :`<div class="driver-empty-assignments">Kein Fahrzeug aktuell zugeordnet</div>`}
       </div>
       <div class="entry-actions">
-        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();navigate('detail','${v.id}')">Fahrzeug</button>
+        <button class="btn btn-secondary btn-sm" onclick="openDriverModal('${driver.id}')">Bearbeiten</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDriver('${driver.id}')">Löschen</button>
       </div>
-    </div>`).join('')}</div>`;
+    </div>`;
+  }).join('')}</div>`;
 }
 
 function renderTicketsView(){
@@ -1959,6 +2160,7 @@ function renderAccidentList(list,compact=false){
           <span style="font-size:.82rem;color:var(--muted2)">${esc(a.location||'—')}</span>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();printAccidentReport('${a.id}')">🖨</button>
           <button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openAccidentModal('${a.vehicleId}','${a.id}')">✏</button>
           <button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deleteAccidentReport('${a.id}')">✕</button>
         </div>
@@ -2394,6 +2596,7 @@ document.getElementById('modal-save').addEventListener('click',async()=>{
   let photo='';
   const existingId=document.getElementById('v-id').value;
   let previousVehicle=null;
+  const previousDrivers=(DB.drivers||[]).map(driver=>({...driver}));
   if(existingId){
     const existing=DB.vehicles.find(x=>x.id===existingId);
     photo=existing?.photo||'';
@@ -2420,6 +2623,7 @@ document.getElementById('modal-save').addEventListener('click',async()=>{
     notes:document.getElementById('v-notes').value.trim(),
     photo,
   };
+  ensureDriverRecord(entry.driver);
 
   try{
     if(existingId){
@@ -2436,6 +2640,7 @@ document.getElementById('modal-save').addEventListener('click',async()=>{
     }
   }catch(e){
     // saveData already showed the toast; revert in-memory change
+    DB.drivers=previousDrivers;
     if(existingId&&previousVehicle){
       const idx=DB.vehicles.findIndex(x=>x.id===existingId);
       if(idx!==-1)DB.vehicles[idx]=previousVehicle;
@@ -2446,6 +2651,107 @@ document.getElementById('modal-save').addEventListener('click',async()=>{
   closeVehicleModal();
   refreshDataViews();
 });
+
+/* ─── Driver modal ─────────────────────────────────────────────── */
+function openDriverModal(id){
+  const driver=id?(DB.drivers||[]).find(entry=>entry.id===id):null;
+  document.getElementById('driver-modal-title').textContent=driver?'Fahrer bearbeiten':'Fahrer anlegen';
+  document.getElementById('driver-id').value=driver?.id||'';
+  document.getElementById('driver-name').value=driver?.name||'';
+  document.getElementById('driver-status').value=driver?.status||'Aktiv';
+  document.getElementById('driver-phone').value=driver?.phone||'';
+  document.getElementById('driver-email').value=driver?.email||'';
+  document.getElementById('driver-employee-no').value=driver?.employeeNo||'';
+  document.getElementById('driver-license-class').value=driver?.licenseClass||'';
+  document.getElementById('driver-notes').value=driver?.notes||'';
+  document.getElementById('driver-modal').classList.add('open');
+}
+window.openDriverModal=openDriverModal;
+function closeDriverModal(){
+  document.getElementById('driver-form').reset();
+  document.getElementById('driver-id').value='';
+  document.getElementById('driver-modal').classList.remove('open');
+}
+document.getElementById('driver-modal-close').addEventListener('click',closeDriverModal);
+document.getElementById('driver-modal-cancel').addEventListener('click',closeDriverModal);
+document.getElementById('driver-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDriverModal()});
+function saveDriver(){
+  const id=document.getElementById('driver-id').value;
+  const name=document.getElementById('driver-name').value.trim();
+  if(!name){toast('Bitte den Fahrernamen ausfüllen.','error');return;}
+  const duplicate=(DB.drivers||[]).find(driver=>driver.id!==id&&driverNameKey(driver.name)===driverNameKey(name));
+  if(duplicate){toast('Dieser Fahrer existiert bereits.','error');return;}
+  const previousDrivers=(DB.drivers||[]).map(driver=>({...driver}));
+  const previousVehicles=DB.vehicles.map(vehicle=>({...vehicle}));
+  const previousDailyPlans=DB.dailyPlans.map(plan=>({...plan}));
+  const previousAccidents=(DB.accidentReports||[]).map(report=>({...report}));
+  const previousHandovers=DB.handovers.map(handover=>({...handover}));
+  const existing=id?(DB.drivers||[]).find(driver=>driver.id===id):null;
+  const previousName=existing?.name||'';
+  const entry=createDriverRecord(name,{
+    id:id||undefined,
+    phone:document.getElementById('driver-phone').value.trim(),
+    email:document.getElementById('driver-email').value.trim(),
+    employeeNo:document.getElementById('driver-employee-no').value.trim(),
+    licenseClass:document.getElementById('driver-license-class').value.trim(),
+    status:document.getElementById('driver-status').value,
+    notes:document.getElementById('driver-notes').value.trim(),
+    autoCreated:false,
+  });
+  try{
+    if(existing){
+      const idx=DB.drivers.findIndex(driver=>driver.id===id);
+      if(idx===-1){toast('Fahrer konnte nicht gefunden werden.','error');return;}
+      DB.drivers[idx]={...existing,...entry,autoCreated:false};
+      if(driverNameKey(previousName)!==driverNameKey(name)){
+        DB.vehicles.forEach(vehicle=>{if(driverNameKey(vehicle.driver)===driverNameKey(previousName))vehicle.driver=name;});
+        DB.dailyPlans.forEach(plan=>{if(driverNameKey(plan.driver)===driverNameKey(previousName))plan.driver=name;});
+        DB.accidentReports.forEach(report=>{if(driverNameKey(report.driver)===driverNameKey(previousName))report.driver=name;});
+        DB.handovers.forEach(handover=>{if(driverNameKey(handover.planDriver)===driverNameKey(previousName))handover.planDriver=name;});
+      }
+      saveData(DB);
+      toast('Fahrer aktualisiert.');
+    }else{
+      DB.drivers.unshift(entry);
+      saveData(DB);
+      toast('Fahrer gespeichert.');
+    }
+  }catch(err){
+    DB.drivers=previousDrivers;
+    DB.vehicles=previousVehicles;
+    DB.dailyPlans=previousDailyPlans;
+    DB.accidentReports=previousAccidents;
+    DB.handovers=previousHandovers;
+    return;
+  }
+  closeDriverModal();
+  refreshDataViews();
+}
+document.getElementById('driver-modal-save').addEventListener('click',saveDriver);
+document.getElementById('driver-form').addEventListener('submit',e=>{e.preventDefault();saveDriver();});
+window.deleteDriver=function(id){
+  const driver=(DB.drivers||[]).find(entry=>entry.id===id);
+  if(!driver)return;
+  const assignedVehicles=getAssignedVehiclesForDriver(driver.name);
+  const question=assignedVehicles.length
+    ?`Fahrer "${driver.name}" wirklich löschen?\nDie Zuordnung bei ${assignedVehicles.length} Fahrzeug${assignedVehicles.length!==1?'en':''} wird entfernt.`
+    :`Fahrer "${driver.name}" wirklich löschen?`;
+  if(!confirm(question))return;
+  const previousDrivers=(DB.drivers||[]).map(entry=>({...entry}));
+  const previousVehicles=DB.vehicles.map(vehicle=>({...vehicle}));
+  DB.drivers=DB.drivers.filter(entry=>entry.id!==id);
+  DB.vehicles.forEach(vehicle=>{
+    if(driverNameKey(vehicle.driver)===driverNameKey(driver.name))vehicle.driver='';
+  });
+  try{saveData(DB);}
+  catch(err){
+    DB.drivers=previousDrivers;
+    DB.vehicles=previousVehicles;
+    return;
+  }
+  toast('Fahrer gelöscht.');
+  refreshDataViews();
+};
 
 /* ─── Delete vehicle ──────────────────────────────────────────── */
 function confirmDeleteVehicle(id){
@@ -2807,12 +3113,18 @@ function drawSignaturePoint(point){
   sigCtx.lineTo(point.x+0.01,point.y+0.01);
   sigCtx.stroke();
 }
+function updateSignatureUiState(){
+  const hasSignature=!isSigEmpty();
+  document.getElementById('sig-wrap').classList.toggle('has-signature',hasSignature);
+  document.getElementById('sig-placeholder').style.display=hasSignature?'none':'flex';
+}
 function startSignature(e){
   e.preventDefault();
   _sigDrawing=true;
   _sigLast=sigPos(e);
   drawSignaturePoint(_sigLast);
   document.getElementById('sig-error').style.display='none';
+  updateSignatureUiState();
   if(sigCanvas.setPointerCapture){
     try{sigCanvas.setPointerCapture(e.pointerId);}catch{}
   }
@@ -2823,6 +3135,7 @@ function moveSignature(e){
   const p=sigPos(e);
   sigCtx.beginPath();sigCtx.moveTo(_sigLast.x,_sigLast.y);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();
   _sigLast=p;
+  updateSignatureUiState();
 }
 function endSignature(e){
   if(!_sigDrawing)return;
@@ -2838,6 +3151,7 @@ sigCanvas.addEventListener('pointercancel',endSignature);
 window.addEventListener('pointerup',endSignature);
 document.getElementById('sig-clear').addEventListener('click',()=>{
   sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+  updateSignatureUiState();
 });
 function isSigEmpty(){
   const d=sigCtx.getImageData(0,0,sigCanvas.width,sigCanvas.height).data;
@@ -2852,6 +3166,7 @@ function drawSignature(signature){
     const dpr=window.devicePixelRatio||1;
     sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
     sigCtx.drawImage(img,0,0,sigCanvas.width/dpr,sigCanvas.height/dpr);
+    updateSignatureUiState();
   };
   img.src=signature;
 }
@@ -2911,9 +3226,15 @@ function getSelectedVehiclePlate(){
   const vehicleId=document.getElementById('hm-vehicle-sel').value;
   return DB.vehicles.find(v=>v.id===vehicleId)?.plate||'';
 }
+function getSelectedVehicleDriver(){
+  const vehicleId=document.getElementById('hm-vehicle-sel').value;
+  return DB.vehicles.find(v=>v.id===vehicleId)?.driver||'';
+}
 document.getElementById('hm-vehicle-sel').addEventListener('change',()=>{
   const plateInput=document.getElementById('hm-plan-plate');
+  const driverInput=document.getElementById('hm-plan-driver');
   if(!plateInput.value.trim())plateInput.value=getSelectedVehiclePlate();
+  if(!driverInput.value.trim())driverInput.value=getSelectedVehicleDriver();
 });
 
 window.openHandoverModal=function(vehicleId,editId){
@@ -2922,6 +3243,7 @@ window.openHandoverModal=function(vehicleId,editId){
   replaceUploads(_hmVehiclePhotos,[]);
   replaceUploads(_hmInteriorPhotos,[]);
   sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+  updateSignatureUiState();
   document.getElementById('sig-error').style.display='none';
 
   const editObj=editId?DB.handovers.find(x=>x.id===editId):null;
@@ -2956,7 +3278,7 @@ window.openHandoverModal=function(vehicleId,editId){
     document.getElementById('hm-from').value='';
     document.getElementById('hm-to').value='';
     document.getElementById('hm-notes').value='';
-    document.getElementById('hm-plan-driver').value='';
+    document.getElementById('hm-plan-driver').value=getSelectedVehicleDriver();
     document.getElementById('hm-plan-plate').value=getSelectedVehiclePlate();
     document.getElementById('hm-plan-tour').value='';
   }
@@ -2967,6 +3289,7 @@ window.openHandoverModal=function(vehicleId,editId){
   setTimeout(()=>{
     resizeSigCanvas();
     if(editObj?.signature)drawSignature(editObj.signature);
+    else updateSignatureUiState();
   },50);
 };
 
@@ -2979,6 +3302,7 @@ function closeHandoverModal(){
   renderVehiclePhotoPreviews();
   renderInteriorPhotoPreviews();
   sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+  updateSignatureUiState();
   document.getElementById('sig-error').style.display='none';
   document.getElementById('handover-modal').classList.remove('open');
 }
@@ -3002,6 +3326,7 @@ function saveHandover(e){
 
   if(!vehicleId||!date||!from||!to){toast('Bitte alle Pflichtfelder ausfüllen.','error');return;}
   const existingHandover=editId?DB.handovers.find(x=>x.id===editId):null;
+  const previousDrivers=(DB.drivers||[]).map(driver=>({...driver}));
 
   const signature=isSigEmpty()
     ?(existingHandover?.signature||'')
@@ -3024,6 +3349,7 @@ function saveHandover(e){
 
   let prevHandover=null;
   try{
+    ensureDriverRecord(planDriver);
     if(editId){
       const idx=DB.handovers.findIndex(x=>x.id===editId);
       if(idx===-1){toast('Protokoll konnte nicht gefunden werden.','error');return;}
@@ -3037,6 +3363,7 @@ function saveHandover(e){
       toast('Übergabeprotokoll gespeichert.');
     }
   }catch(e){
+    DB.drivers=previousDrivers;
     if(editId&&prevHandover){const idx=DB.handovers.findIndex(x=>x.id===editId);DB.handovers[idx]=prevHandover;}
     else if(!editId)DB.handovers.pop();
     return;
@@ -3271,6 +3598,11 @@ function closeDailyPlanModal(){document.getElementById('dailyplan-modal').classL
 document.getElementById('dp-modal-close').addEventListener('click',closeDailyPlanModal);
 document.getElementById('dp-modal-cancel').addEventListener('click',closeDailyPlanModal);
 document.getElementById('dailyplan-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDailyPlanModal()});
+document.getElementById('dp-vehicle-sel').addEventListener('change',()=>{
+  const vehicle=DB.vehicles.find(entry=>entry.id===document.getElementById('dp-vehicle-sel').value);
+  const driverInput=document.getElementById('dp-driver');
+  if(vehicle&&(!driverInput.value.trim()||driverInput.value.trim()===vehicle.driver))driverInput.value=vehicle.driver||'';
+});
 
 document.getElementById('dp-modal-save').addEventListener('click',()=>{
   const editId=document.getElementById('dp-id').value;
@@ -3278,6 +3610,7 @@ document.getElementById('dp-modal-save').addEventListener('click',()=>{
   const date=document.getElementById('dp-date').value;
   const driver=document.getElementById('dp-driver').value.trim();
   if(!vehicleId||!date||!driver){toast('Bitte Datum, Fahrzeug und Fahrer ausfüllen.','error');return;}
+  const previousDrivers=(DB.drivers||[]).map(entry=>({...entry}));
   const entry={
     id:editId||uid(),
     vehicleId,date,driver,
@@ -3289,6 +3622,7 @@ document.getElementById('dp-modal-save').addEventListener('click',()=>{
   };
   let prev=null;
   try{
+    ensureDriverRecord(driver);
     if(editId){
       const idx=DB.dailyPlans.findIndex(x=>x.id===editId);
       if(idx===-1){toast('Tageseinsatzplan konnte nicht gefunden werden.','error');return;}
@@ -3302,6 +3636,7 @@ document.getElementById('dp-modal-save').addEventListener('click',()=>{
       toast('Tageseinsatzplan gespeichert.');
     }
   }catch(e){
+    DB.drivers=previousDrivers;
     if(editId&&prev){const idx=DB.dailyPlans.findIndex(x=>x.id===editId);DB.dailyPlans[idx]=prev;}
     else if(!editId)DB.dailyPlans.pop();
     return;
@@ -3721,6 +4056,7 @@ function saveAccidentReport(e){
   const location=document.getElementById('accident-location').value.trim();
   if(!vehicleId||!driver||!date||!time||!location){toast('Bitte Fahrzeug, Fahrer, Datum, Uhrzeit und Unfallort ausfüllen.','error');return;}
   const existing=editId?(DB.accidentReports||[]).find(x=>x.id===editId):null;
+  const previousDrivers=(DB.drivers||[]).map(entry=>({...entry}));
   const entry={
     id:editId||uid(),
     vehicleId,driver,date,time,location,
@@ -3742,6 +4078,7 @@ function saveAccidentReport(e){
   };
   let prev=null;
   try{
+    ensureDriverRecord(driver);
     if(editId){
       const idx=DB.accidentReports.findIndex(x=>x.id===editId);
       if(idx===-1){toast('Unfallbericht konnte nicht gefunden werden.','error');return;}
@@ -3755,6 +4092,7 @@ function saveAccidentReport(e){
       toast('Unfallbericht gespeichert.');
     }
   }catch(err){
+    DB.drivers=previousDrivers;
     if(editId&&prev){
       const idx=DB.accidentReports.findIndex(x=>x.id===editId);
       if(idx!==-1)DB.accidentReports[idx]=prev;
@@ -3784,6 +4122,65 @@ window.deleteAccidentReport=function(id){
   toast('Unfallbericht gelöscht.');
   refreshDataViews(report.vehicleId);
 };
+window.printAccidentReport=function(id){
+  const report=(DB.accidentReports||[]).find(entry=>entry.id===id);
+  if(!report)return;
+  const vehicle=DB.vehicles.find(entry=>entry.id===report.vehicleId);
+  const photosHtml=(report.photos&&report.photos.length)
+    ?report.photos.map((photo,index)=>`<img src="${photo.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Unfallfoto ${index+1}">`).join('')
+    :'<em>Keine Unfallfotos beigefügt</em>';
+  const damageZonesHtml=(report.damageZones&&report.damageZones.length)
+    ?report.damageZones.map(zone=>`<span style="display:inline-block;margin:4px 6px 0 0;padding:4px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:.78rem;font-weight:700">${escPrint(zone)}</span>`).join('')
+    :'<em>Keine Schadenszonen markiert</em>';
+  const w=window.open('','_blank','width=920,height=760');
+  if(!w){toast('Druckfenster wurde blockiert.','error');return;}
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Unfallbericht</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:920px;margin:0 auto}
+    h1{font-size:1.4rem;margin-bottom:4px}h2{font-size:1rem;color:#555;margin-top:24px;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:4px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px}
+    .item label{font-size:.72rem;font-weight:700;text-transform:uppercase;color:#888;display:block;margin-bottom:2px}
+    .item span{font-size:.9rem}
+    @media print{button{display:none}}
+  </style></head><body>
+  <h1>Europäischer Unfallbericht</h1>
+  <p style="color:#555;font-size:.85rem">MoonStar Fleet · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+  <h2>Fahrzeug & Grunddaten</h2>
+  <div class="grid">
+    <div class="item"><label>Fahrzeug</label><span>${escPrint(vehicle?.name||'—')}</span></div>
+    <div class="item"><label>Kennzeichen</label><span>${escPrint(vehicle?.plate||'—')}</span></div>
+    <div class="item"><label>Fahrer</label><span>${escPrint(report.driver||'—')}</span></div>
+    <div class="item"><label>Status</label><span>${escPrint(report.status||'Offen')}</span></div>
+    <div class="item"><label>Datum</label><span>${escPrint(fmtDate(report.date))}</span></div>
+    <div class="item"><label>Uhrzeit</label><span>${escPrint(report.time||'—')}</span></div>
+    <div class="item" style="grid-column:1/-1"><label>Unfallort</label><span>${escPrint(report.location||'—')}</span></div>
+    <div class="item"><label>Polizei informiert</label><span>${escPrint(report.police||'Nein')}</span></div>
+    <div class="item"><label>Verletzte</label><span>${escPrint(report.injured||'Nein')}</span></div>
+    ${report.weather?`<div class="item"><label>Wetter</label><span>${escPrint(report.weather)}</span></div>`:''}
+  </div>
+  <h2>Europäischer Unfallbericht</h2>
+  <div class="grid">
+    ${report.policyholder?`<div class="item"><label>Versicherungsnehmer</label><span>${escPrint(report.policyholder)}</span></div>`:''}
+    ${report.insurer?`<div class="item"><label>Versicherung</label><span>${escPrint(report.insurer)}</span></div>`:''}
+    ${report.opponentName?`<div class="item"><label>Unfallgegner</label><span>${escPrint(report.opponentName)}</span></div>`:''}
+    ${report.opponentPlate?`<div class="item"><label>Kennzeichen Gegner</label><span>${escPrint(report.opponentPlate)}</span></div>`:''}
+    ${report.opponentInsurer?`<div class="item"><label>Versicherung Gegner</label><span>${escPrint(report.opponentInsurer)}</span></div>`:''}
+    ${report.witnesses?`<div class="item" style="grid-column:1/-1"><label>Zeugen</label><span>${escPrint(report.witnesses)}</span></div>`:''}
+  </div>
+  ${report.description?`<h2>Unfallhergang</h2><p>${escPrint(report.description)}</p>`:''}
+  ${report.sketchNotes?`<h2>Skizze / Zusatznotizen</h2><p>${escPrint(report.sketchNotes)}</p>`:''}
+  <h2>Schadensmarkierung</h2>
+  <div>${damageZonesHtml}</div>
+  <h2>Unfallfotos</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">${photosHtml}</div>
+  <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
+    <div><div style="border-top:1px solid #999;padding-top:6px;font-size:.78rem;color:#666">Fahrer: ${escPrint(report.driver||'—')}</div></div>
+    <div><div style="border-top:1px solid #999;padding-top:6px;font-size:.78rem;color:#666">Datum: ${escPrint(fmtDate(report.date))}</div></div>
+  </div>
+  <script>window.onload=()=>window.print()<\/script>
+  </body></html>`);
+  w.document.close();
+};
 
 document.getElementById('new-accident-btn').addEventListener('click',()=>openAccidentModal(null));
 document.getElementById('accident-search').addEventListener('input',e=>{accidentFilterSearch=e.target.value;renderAccidentReports()});
@@ -3796,6 +4193,7 @@ document.getElementById('accident-clear-filters').addEventListener('click',()=>{
   document.getElementById('accident-filter-vehicle').value='';
   renderAccidentReports();
 });
+document.getElementById('new-driver-btn').addEventListener('click',()=>openDriverModal());
 
 /* ─── CSV Export/Import ───────────────────────────────────────── */
 document.getElementById('nav-export-csv').addEventListener('click',()=>{
@@ -3837,6 +4235,7 @@ document.getElementById('importCsvFile').addEventListener('change',e=>{
         return;
       }
       const prevVehicles=DB.vehicles.map(v=>({...v}));
+      const previousDrivers=(DB.drivers||[]).map(entry=>({...entry}));
       let added=0,updated=0;
       for(let i=1;i<rows.length;i++){
         const vals=rows[i];
@@ -3846,16 +4245,19 @@ document.getElementById('importCsvFile').addEventListener('change',e=>{
         const existing=DB.vehicles.find(v=>v.plate&&v.plate===obj.plate);
         if(existing){
           Object.assign(existing,Object.fromEntries(Object.entries(obj).filter(([,value])=>value!=='')));
+          ensureDriverRecord(existing.driver);
           updated++;
         }else{
           if(!obj.name||!obj.plate||!obj.brand||!obj.model)continue;
           DB.vehicles.push({id:uid(),...obj,photo:''});
+          ensureDriverRecord(obj.driver);
           added++;
         }
       }
       try{saveData(DB);}
       catch(err){
         DB.vehicles=prevVehicles;
+        DB.drivers=previousDrivers;
         throw err;
       }
       toast(`CSV importiert: ${added} neu, ${updated} aktualisiert.`);

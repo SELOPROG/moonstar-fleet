@@ -2758,10 +2758,7 @@ function saveDriver(){
         DB.vehicles.forEach(vehicle=>{if(driverNameKey(vehicle.driver)===driverNameKey(previousName))vehicle.driver=name;});
         DB.dailyPlans.forEach(plan=>{if(driverNameKey(plan.driver)===driverNameKey(previousName))plan.driver=name;});
         DB.accidentReports.forEach(report=>{if(driverNameKey(report.driver)===driverNameKey(previousName))report.driver=name;});
-        DB.handovers.forEach(handover=>{
-          if(driverNameKey(handover.driver)===driverNameKey(previousName))handover.driver=name;
-          if(driverNameKey(handover.planDriver)===driverNameKey(previousName))handover.planDriver=name;
-        });
+        DB.handovers.forEach(handover=>{if(driverNameKey(handover.driver)===driverNameKey(previousName))handover.driver=name;});
       }
       saveData(DB);
       toast('Fahrer aktualisiert.');
@@ -3271,154 +3268,168 @@ function populateVehicleSelect(selectedId){
   const sel=document.getElementById('hm-vehicle-sel');
   sel.innerHTML=DB.vehicles.map(v=>`<option value="${v.id}"${v.id===selectedId?' selected':''}>${esc(v.name)} (${esc(v.plate)})</option>`).join('');
 }
-function getSelectedVehiclePlate(){
-  const vehicleId=document.getElementById('hm-vehicle-sel').value;
-  return DB.vehicles.find(v=>v.id===vehicleId)?.plate||'';
-}
 function getSelectedVehicleDriver(){
   const vehicleId=document.getElementById('hm-vehicle-sel').value;
   return DB.vehicles.find(v=>v.id===vehicleId)?.driver||'';
 }
-document.getElementById('hm-vehicle-sel').addEventListener('change',()=>{
-  const driverInput=document.getElementById('hm-driver');
-  if(!driverInput.value.trim())driverInput.value=getSelectedVehicleDriver();
-});
-
-window.openHandoverModal=function(vehicleId,editId){
-  try{
-    if(!DB.vehicles.length){toast('Bitte zuerst ein Fahrzeug anlegen.','error');return;}
-    const editObj=editId?DB.handovers.find(x=>x.id===editId):null;
-    const handover=editObj?normalizeHandoverRecord(editObj):null;
-    const selectedVehicleId=vehicleId||(handover?.vehicleId)||DB.vehicles[0]?.id||'';
-    if(handover&&!DB.vehicles.some(v=>v.id===handover.vehicleId)){toast('Zugehöriges Fahrzeug nicht gefunden.','error');return;}
-
-    document.getElementById('handover-form').reset();
-    replaceUploads(_hmVehiclePhotos,[]);
-    replaceUploads(_hmInteriorPhotos,[]);
-    sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
-    updateSignatureUiState();
-    document.getElementById('sig-error').style.display='none';
-
-    document.getElementById('hm-title').textContent=handover?'Übergabeformular bearbeiten':'Übergabeformular erstellen';
-    document.getElementById('hm-id').value=handover?.id||'';
-    document.getElementById('hm-vehicle-id').value=selectedVehicleId;
-
-    populateVehicleSelect(selectedVehicleId);
-    document.getElementById('hm-vehicle-sel').value=selectedVehicleId;
-    document.getElementById('hm-type').value=handover?.type||'Übergabe';
-    document.getElementById('hm-km').value=handover?.km||'';
-    document.getElementById('hm-from').value=handover?.from||'';
-    document.getElementById('hm-to').value=handover?.to||'';
-    document.getElementById('hm-notes').value=handover?.notes||'';
-    document.getElementById('hm-driver').value=handover?.driver||getSelectedVehicleDriver();
-    document.getElementById('hm-fuel-level').value=handover?.fuelLevel||'';
-    document.getElementById('hm-condition').value=handover?.condition||'';
-    document.getElementById('hm-accessories').value=handover?.accessories||'';
-
-    const now=new Date();
-    now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
-    document.getElementById('hm-date').value=handover?.date||now.toISOString().slice(0,16);
-
-    replaceUploads(_hmVehiclePhotos,handover?.vehiclePhotos||[]);
-    replaceUploads(_hmInteriorPhotos,handover?.interiorPhotos||[]);
-    renderVehiclePhotoPreviews();
-    renderInteriorPhotoPreviews();
-    document.getElementById('handover-modal').classList.add('open');
-
-    setTimeout(()=>{
-      resizeSigCanvas();
-      if(handover?.signature)drawSignature(handover.signature);
-      else updateSignatureUiState();
-    },50);
-  }catch(err){
-    toast('Übergabeformular konnte nicht geöffnet werden.','error');
-    console.error(err);
-  }
+const handoverEls={
+  modal:document.getElementById('handover-modal'),
+  form:document.getElementById('handover-form'),
+  title:document.getElementById('hm-title'),
+  hiddenId:document.getElementById('hm-id'),
+  hiddenVehicleId:document.getElementById('hm-vehicle-id'),
+  vehicle:document.getElementById('hm-vehicle-sel'),
+  type:document.getElementById('hm-type'),
+  date:document.getElementById('hm-date'),
+  km:document.getElementById('hm-km'),
+  from:document.getElementById('hm-from'),
+  to:document.getElementById('hm-to'),
+  notes:document.getElementById('hm-notes'),
+  driver:document.getElementById('hm-driver'),
+  fuelLevel:document.getElementById('hm-fuel-level'),
+  condition:document.getElementById('hm-condition'),
+  accessories:document.getElementById('hm-accessories'),
+  error:document.getElementById('sig-error'),
+  closeBtn:document.getElementById('hm-close'),
+  cancelBtn:document.getElementById('hm-cancel'),
+  saveBtn:document.getElementById('hm-save'),
 };
-
-function closeHandoverModal(){
-  document.getElementById('handover-form').reset();
+function getDefaultHandoverDate(){
+  const now=new Date();
+  now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  return now.toISOString().slice(0,16);
+}
+function resetHandoverDraft(){
+  handoverEls.form.reset();
+  handoverEls.hiddenId.value='';
   replaceUploads(_hmVehiclePhotos,[]);
   replaceUploads(_hmInteriorPhotos,[]);
   renderVehiclePhotoPreviews();
   renderInteriorPhotoPreviews();
   sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+  handoverEls.error.style.display='none';
   updateSignatureUiState();
-  document.getElementById('sig-error').style.display='none';
-  document.getElementById('handover-modal').classList.remove('open');
 }
-document.getElementById('hm-close').addEventListener('click',closeHandoverModal);
-document.getElementById('hm-cancel').addEventListener('click',closeHandoverModal);
-document.getElementById('handover-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeHandoverModal()});
+function fillHandoverForm(handover,selectedVehicleId){
+  populateVehicleSelect(selectedVehicleId);
+  handoverEls.vehicle.value=selectedVehicleId;
+  handoverEls.hiddenVehicleId.value=selectedVehicleId;
+  handoverEls.type.value=handover?.type||'Übergabe';
+  handoverEls.date.value=handover?.date||getDefaultHandoverDate();
+  handoverEls.km.value=handover?.km||'';
+  handoverEls.from.value=handover?.from||'';
+  handoverEls.to.value=handover?.to||'';
+  handoverEls.notes.value=handover?.notes||'';
+  handoverEls.driver.value=handover?.driver||getSelectedVehicleDriver();
+  handoverEls.fuelLevel.value=handover?.fuelLevel||'';
+  handoverEls.condition.value=handover?.condition||'';
+  handoverEls.accessories.value=handover?.accessories||'';
+  replaceUploads(_hmVehiclePhotos,handover?.vehiclePhotos||[]);
+  replaceUploads(_hmInteriorPhotos,handover?.interiorPhotos||[]);
+  renderVehiclePhotoPreviews();
+  renderInteriorPhotoPreviews();
+}
+handoverEls.vehicle.addEventListener('change',()=>{
+  if(!handoverEls.driver.value.trim())handoverEls.driver.value=getSelectedVehicleDriver();
+});
+window.openHandoverModal=function(vehicleId=null,editId=''){
+  if(!DB.vehicles.length){toast('Bitte zuerst ein Fahrzeug anlegen.','error');return;}
+  const raw=editId?DB.handovers.find(x=>x.id===editId):null;
+  if(editId&&!raw){toast('Übergabeformular konnte nicht gefunden werden.','error');return;}
+  const handover=raw?normalizeHandoverRecord(raw):null;
+  const selectedVehicleId=vehicleId||handover?.vehicleId||DB.vehicles[0]?.id||'';
+  if(!selectedVehicleId||!DB.vehicles.some(v=>v.id===selectedVehicleId)){toast('Fahrzeug konnte nicht gefunden werden.','error');return;}
 
+  resetHandoverDraft();
+  handoverEls.title.textContent=handover?'Übergabeformular bearbeiten':'Übergabeformular erstellen';
+  handoverEls.hiddenId.value=handover?.id||'';
+  fillHandoverForm(handover,selectedVehicleId);
+  handoverEls.modal.classList.add('open');
+
+  requestAnimationFrame(()=>{
+    resizeSigCanvas();
+    if(handover?.signature)drawSignature(handover.signature);
+    else updateSignatureUiState();
+  });
+};
+function closeHandoverModal(){
+  resetHandoverDraft();
+  handoverEls.modal.classList.remove('open');
+}
+handoverEls.closeBtn.addEventListener('click',closeHandoverModal);
+handoverEls.cancelBtn.addEventListener('click',closeHandoverModal);
+handoverEls.modal.addEventListener('click',e=>{if(e.target===e.currentTarget)closeHandoverModal()});
 function saveHandover(e){
   e?.preventDefault?.();
-  const vehicleId=document.getElementById('hm-vehicle-sel').value;
-  const type=document.getElementById('hm-type').value;
-  const date=document.getElementById('hm-date').value;
-  const km=document.getElementById('hm-km').value.trim();
-  const from=document.getElementById('hm-from').value.trim();
-  const to=document.getElementById('hm-to').value.trim();
-  const notes=document.getElementById('hm-notes').value.trim();
-  const driver=document.getElementById('hm-driver').value.trim();
-  const fuelLevel=document.getElementById('hm-fuel-level').value;
-  const condition=document.getElementById('hm-condition').value.trim();
-  const accessories=document.getElementById('hm-accessories').value.trim();
-  const editId=document.getElementById('hm-id').value;
-
-  if(!vehicleId||!date||!from||!to){toast('Bitte alle Pflichtfelder ausfüllen.','error');return;}
+  const vehicleId=handoverEls.vehicle.value;
+  const editId=handoverEls.hiddenId.value;
   const existingHandover=editId?DB.handovers.find(x=>x.id===editId):null;
-  const previousDrivers=(DB.drivers||[]).map(driver=>({...driver}));
+  if(!vehicleId||!handoverEls.date.value||!handoverEls.from.value.trim()||!handoverEls.to.value.trim()){
+    toast('Bitte alle Pflichtfelder ausfüllen.','error');
+    return;
+  }
+  const signature=isSigEmpty()?(existingHandover?.signature||''):sigCanvas.toDataURL('image/png');
+  if(!signature){
+    handoverEls.error.style.display='block';
+    return;
+  }
+  handoverEls.error.style.display='none';
+
   const vehicleIdx=DB.vehicles.findIndex(x=>x.id===vehicleId);
   if(vehicleIdx===-1){toast('Fahrzeug konnte nicht gefunden werden.','error');return;}
   const previousVehicle={...DB.vehicles[vehicleIdx]};
-
-  const signature=isSigEmpty()
-    ?(existingHandover?.signature||'')
-    :sigCanvas.toDataURL('image/png');
-  if(!signature){
-    document.getElementById('sig-error').style.display='block';
-    return;
-  }
-  document.getElementById('sig-error').style.display='none';
-
+  const previousDrivers=(DB.drivers||[]).map(driver=>({...driver}));
   const entry={
     id:editId||uid(),
-    vehicleId,type,date,km,from,to,notes,driver,fuelLevel,condition,accessories,
+    vehicleId,
+    type:handoverEls.type.value,
+    date:handoverEls.date.value,
+    km:handoverEls.km.value.trim(),
+    from:handoverEls.from.value.trim(),
+    to:handoverEls.to.value.trim(),
+    notes:handoverEls.notes.value.trim(),
+    driver:handoverEls.driver.value.trim(),
+    fuelLevel:handoverEls.fuelLevel.value,
+    condition:handoverEls.condition.value.trim(),
+    accessories:handoverEls.accessories.value.trim(),
     vehiclePhotos:[..._hmVehiclePhotos],
     interiorPhotos:[..._hmInteriorPhotos],
     signature,
     createdAt:editId?(existingHandover?.createdAt||new Date().toISOString()):new Date().toISOString(),
   };
 
-  let prevHandover=null;
+  let previousHandover=null;
   try{
-    ensureDriverRecord(driver);
-    if(km)DB.vehicles[vehicleIdx]={...DB.vehicles[vehicleIdx],km};
+    ensureDriverRecord(entry.driver);
+    if(entry.km)DB.vehicles[vehicleIdx]={...DB.vehicles[vehicleIdx],km:entry.km};
     if(editId){
       const idx=DB.handovers.findIndex(x=>x.id===editId);
       if(idx===-1){toast('Übergabeformular konnte nicht gefunden werden.','error');return;}
-      prevHandover=DB.handovers[idx];
-      DB.handovers[idx]={...prevHandover,...entry};
+      previousHandover=DB.handovers[idx];
+      DB.handovers[idx]={...previousHandover,...entry};
       saveData(DB);
       toast('Übergabeformular aktualisiert.');
-    } else {
+    }else{
       DB.handovers.push(entry);
       saveData(DB);
       toast('Übergabeformular gespeichert.');
     }
-  }catch(e){
+  }catch(err){
     DB.drivers=previousDrivers;
     DB.vehicles[vehicleIdx]=previousVehicle;
-    if(editId&&prevHandover){const idx=DB.handovers.findIndex(x=>x.id===editId);DB.handovers[idx]=prevHandover;}
-    else if(!editId)DB.handovers.pop();
+    if(editId&&previousHandover){
+      const idx=DB.handovers.findIndex(x=>x.id===editId);
+      if(idx!==-1)DB.handovers[idx]=previousHandover;
+    }else if(!editId){
+      DB.handovers.pop();
+    }
     return;
   }
   closeHandoverModal();
   refreshDataViews(vehicleId);
 }
-document.getElementById('hm-save').addEventListener('click',saveHandover);
-document.getElementById('handover-form').addEventListener('submit',saveHandover);
+handoverEls.saveBtn.addEventListener('click',saveHandover);
+handoverEls.form.addEventListener('submit',saveHandover);
 
 /* ─── Import ──────────────────────────────────────────────────── */
 document.getElementById('importFile').addEventListener('change',async e=>{

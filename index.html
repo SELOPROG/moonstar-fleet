@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>MoonStar Fleet – Fuhrparkmanagement</title>
+<title>Fleet-Log 24 – Fuhrparkmanagement</title>
 <style>
 /* ─── Reset & variables ─────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -673,7 +673,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
       <circle cx="5.5" cy="18.5" r="2.5"/>
       <circle cx="18.5" cy="18.5" r="2.5"/>
     </svg>
-    MoonStar <span>Fleet</span>
+    Fleet-Log <span>24</span>
   </div>
   <nav>
     <div class="nav-section">Navigation</div>
@@ -691,7 +691,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
     </div>
     <div class="nav-item" data-view="handovers">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      Übergabeprotokolle
+      Übergabeformulare
     </div>
     <div class="nav-item" data-view="tickets">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v6c0 5-3.8 7.7-9 9-5.2-1.3-9-4-9-9V9z"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>
@@ -739,7 +739,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
     </div>
   </nav>
   <div class="sidebar-footer">
-    <div style="font-size:.72rem;color:var(--muted2)">MoonStar Fleet v1.0</div>
+    <div style="font-size:.72rem;color:var(--muted2)">Fleet-Log 24 v1.0</div>
     <div style="font-size:.72rem;color:var(--muted2)">Alle Daten lokal im Browser</div>
   </div>
 </aside>
@@ -831,8 +831,8 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <div class="view" id="view-handovers">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
         <div>
-          <h2 style="font-size:1.2rem;font-weight:800">Alle Übergabeprotokolle</h2>
-          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Gesamtübersicht aller Fahrzeugübergaben und -rücknahmen</p>
+          <h2 style="font-size:1.2rem;font-weight:800">Alle Übergabeformulare</h2>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:2px">Neue Übergabe- und Rücknahmeformulare mit Fotos und Unterschrift</p>
         </div>
         <button class="btn btn-primary btn-sm" id="new-handover-global-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1172,7 +1172,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
 <div class="modal-overlay" id="handover-modal">
   <div class="modal" style="max-width:780px">
     <div class="modal-header">
-      <span class="modal-title" id="hm-title">Übergabeprotokoll erstellen</span>
+      <span class="modal-title" id="hm-title">Übergabeformular erstellen</span>
       <button class="btn btn-icon btn-ghost" id="hm-close">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -1219,27 +1219,38 @@ tr:hover td{background:rgba(255,255,255,.025)}
 
         <div style="margin-bottom:18px">
           <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
-            Tageseinsatzplan
+            Neues Übergabeformular
           </div>
           <div class="form-grid">
             <div class="form-group">
-              <label>Fahrername</label>
-              <input class="form-control" id="hm-plan-driver" list="driver-suggestions" placeholder="Name des Fahrers">
+              <label>Fahrer / Nutzer</label>
+              <input class="form-control" id="hm-driver" list="driver-suggestions" placeholder="Name des Fahrers oder Nutzers">
             </div>
             <div class="form-group">
-              <label>Kennzeichen</label>
-              <input class="form-control" id="hm-plan-plate" placeholder="z. B. B-MS 1234">
+              <label>Tankstand</label>
+              <select class="form-control" id="hm-fuel-level">
+                <option value="">—</option>
+                <option value="Leer">Leer</option>
+                <option value="1/4">1/4</option>
+                <option value="1/2">1/2</option>
+                <option value="3/4">3/4</option>
+                <option value="Voll">Voll</option>
+              </select>
             </div>
             <div class="form-group span2">
-              <label>Tournummern</label>
-              <input class="form-control" id="hm-plan-tour" placeholder="z. B. Tour 12, 18, 21">
+              <label>Zustand / bekannte Schäden</label>
+              <textarea class="form-control" id="hm-condition" placeholder="Aktueller Zustand, sichtbare Schäden, Besonderheiten …" style="min-height:80px"></textarea>
+            </div>
+            <div class="form-group span2">
+              <label>Zubehör / übergebene Gegenstände</label>
+              <textarea class="form-control" id="hm-accessories" placeholder="z. B. Schlüssel, Tankkarte, Fahrzeugschein, Ladekabel, Warnweste …" style="min-height:80px"></textarea>
             </div>
           </div>
         </div>
 
         <div style="margin-bottom:18px">
           <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
-            Fahrzeugfotos – Optik (optional)
+            Außenfotos (optional)
           </div>
           <p style="font-size:.78rem;color:var(--muted2);margin-bottom:10px">Lade Fotos vom äußeren Fahrzeugzustand hoch.</p>
           <input type="file" id="hm-vehicle-photos-input" accept="image/*" multiple style="display:none">
@@ -1252,7 +1263,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
 
         <div style="margin-bottom:18px">
           <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
-            Fahrzeugfotos – Innenraum (optional)
+            Innenraumfotos (optional)
           </div>
           <p style="font-size:.78rem;color:var(--muted2);margin-bottom:10px">Lade Fotos vom Innenraum des Fahrzeugs hoch.</p>
           <input type="file" id="hm-interior-photos-input" accept="image/*" multiple style="display:none">
@@ -1261,20 +1272,6 @@ tr:hover td{background:rgba(255,255,255,.025)}
             Fotos auswählen
           </button>
           <div class="doc-preview-grid" id="hm-interior-photos-preview"></div>
-        </div>
-
-        <!-- ID documents upload -->
-        <div style="margin-bottom:18px">
-          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
-            Ausweis / Führerschein (Fotos, optional)
-          </div>
-          <p style="font-size:.78rem;color:var(--muted2);margin-bottom:10px">Lade Fotos des Führerscheins oder Personalausweises der übernehmenden Person hoch. Die Bilder werden lokal im Browser gespeichert.</p>
-          <input type="file" id="hm-docs-input" accept="image/*" multiple style="display:none">
-          <button type="button" class="btn btn-secondary btn-sm" id="hm-docs-btn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Dokumente auswählen
-          </button>
-          <div class="doc-preview-grid" id="hm-docs-preview"></div>
         </div>
 
         <!-- Signature pad -->
@@ -1307,7 +1304,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
       <button class="btn btn-ghost" id="hm-cancel">Abbrechen</button>
       <button type="button" class="btn btn-primary" id="hm-save">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Übergabeprotokoll speichern
+        Übergabeformular speichern
       </button>
     </div>
   </div>
@@ -1805,7 +1802,7 @@ function navigate(view,vehicleId){
   });
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
 
-  const titles={dashboard:'Dashboard',vehicles:'Fahrzeuge',drivers:'Fahrer',detail:'Fahrzeugdetails',handovers:'Übergabeprotokolle',tickets:'Bußgelder',accidents:'Unfallberichte',dailyplans:'Tageseinsatzplan',echecks:'E-Check'};
+  const titles={dashboard:'Dashboard',vehicles:'Fahrzeuge',drivers:'Fahrer',detail:'Fahrzeugdetails',handovers:'Übergabeformulare',tickets:'Bußgelder',accidents:'Unfallberichte',dailyplans:'Tageseinsatzplan',echecks:'E-Check'};
   document.getElementById('topbar-title').textContent=titles[targetView]||'';
 
   if(targetView==='detail'){
@@ -2289,7 +2286,7 @@ function renderDetail(id){
       <div style="margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <button class="btn btn-primary btn-sm" onclick="openHandoverModal('${id}')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Übergabeprotokoll erstellen
+          Übergabeformular erstellen
         </button>
       </div>
       ${renderHandoverList(hoList)}
@@ -2373,7 +2370,7 @@ function renderTicketList(list){
     </div>`).join('')}</div>`;
 }
 function renderHandoverList(list){
-  if(!list.length)return emptyState('Noch keine Übergabeprotokolle vorhanden');
+  if(!list.length)return emptyState('Noch keine Übergabeformulare vorhanden');
   const sorted=[...list].sort((a,b)=>new Date(b.date)-new Date(a.date));
   return`<div class="entry-list">${sorted.map(h=>{
     const typeBadge=h.type==='Rücknahme'
@@ -2385,6 +2382,7 @@ function renderHandoverList(list){
           ${typeBadge}
           <span style="font-weight:600;font-size:.9rem">${esc(fmtDatetime(h.date))}</span>
           <span style="font-size:.82rem;color:var(--muted)">${esc(h.from)} → ${esc(h.to)}</span>
+          ${h.driver?`<span style="font-size:.75rem;color:var(--muted2)">Fahrer: ${esc(h.driver)}</span>`:''}
           ${h.km?`<span style="font-size:.75rem;color:var(--muted2)">${Number(h.km).toLocaleString('de-DE')} km</span>`:''}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
@@ -2399,22 +2397,15 @@ function renderHandoverList(list){
           <div class="handover-info-item"><label>Typ</label><span>${esc(h.type)}</span></div>
           <div class="handover-info-item"><label>Übergeber</label><span>${esc(h.from)}</span></div>
           <div class="handover-info-item"><label>Empfänger</label><span>${esc(h.to)}</span></div>
+          ${h.driver?`<div class="handover-info-item"><label>Fahrer / Nutzer</label><span>${esc(h.driver)}</span></div>`:''}
+          ${h.fuelLevel?`<div class="handover-info-item"><label>Tankstand</label><span>${esc(h.fuelLevel)}</span></div>`:''}
           ${h.km?`<div class="handover-info-item"><label>Kilometerstand</label><span>${Number(h.km).toLocaleString('de-DE')} km</span></div>`:''}
           ${h.notes?`<div class="handover-info-item" style="grid-column:1/-1"><label>Bemerkungen</label><span>${esc(h.notes)}</span></div>`:''}
+          ${h.condition?`<div class="handover-info-item" style="grid-column:1/-1"><label>Zustand / Schäden</label><span>${esc(h.condition)}</span></div>`:''}
+          ${h.accessories?`<div class="handover-info-item" style="grid-column:1/-1"><label>Zubehör</label><span>${esc(h.accessories)}</span></div>`:''}
         </div>
-        ${renderHandoverPlanSection(h)}
-        ${renderHandoverPhotoSection('Fahrzeugoptik',h.vehiclePhotos,'Fahrzeugfoto')}
-        ${renderHandoverPhotoSection('Innenraum',h.interiorPhotos,'Innenraumfoto')}
-        ${h.docs&&h.docs.length?`
-        <div style="margin-bottom:14px">
-          <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Ausweisdokumente (${h.docs.length})</div>
-          <div class="doc-preview-grid">${h.docs.map((d,i)=>`
-            <div class="doc-thumb">
-              <img src="${d.data}" alt="Dokument ${i+1}">
-              <div class="doc-label">${esc(d.name||'Dokument '+(i+1))}</div>
-            </div>`).join('')}
-          </div>
-        </div>`:''}
+        ${renderHandoverPhotoSection('Außenfotos',h.vehiclePhotos,'Außenfoto')}
+        ${renderHandoverPhotoSection('Innenraumfotos',h.interiorPhotos,'Innenraumfoto')}
         ${h.signature?`
         <div>
           <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Unterschrift</div>
@@ -2423,17 +2414,6 @@ function renderHandoverList(list){
       </div>
     </div>`;
   }).join('')}</div>`;
-}
-function renderHandoverPlanSection(h){
-  if(!h.planDriver&&!h.planPlate&&!h.planTour)return'';
-  return`<div style="margin-bottom:14px">
-    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Tageseinsatzplan</div>
-    <div class="handover-info-grid">
-      ${h.planDriver?`<div class="handover-info-item"><label>Fahrername</label><span>${esc(h.planDriver)}</span></div>`:''}
-      ${h.planPlate?`<div class="handover-info-item"><label>Kennzeichen</label><span>${esc(h.planPlate)}</span></div>`:''}
-      ${h.planTour?`<div class="handover-info-item" style="grid-column:1/-1"><label>Tournummern</label><span>${esc(h.planTour)}</span></div>`:''}
-    </div>
-  </div>`;
 }
 function renderHandoverPhotoSection(title,photos,labelPrefix){
   if(!photos||!photos.length)return'';
@@ -2454,25 +2434,24 @@ window.toggleHandoverCard=function(id){
 window.deleteHandover=function(id){
   const h=DB.handovers.find(x=>x.id===id);
   if(!h)return;
-  if(!confirm('Übergabeprotokoll wirklich löschen?'))return;
+  if(!confirm('Übergabeformular wirklich löschen?'))return;
   const prevHandovers=DB.handovers;
   DB.handovers=DB.handovers.filter(x=>x.id!==id);
   try{saveData(DB);}
   catch(e){DB.handovers=prevHandovers;return;}
-  toast('Protokoll gelöscht.');
+  toast('Übergabeformular gelöscht.');
   refreshDataViews(h.vehicleId);
 }
 window.printHandover=function(id){
   const h=DB.handovers.find(x=>x.id===id);
   if(!h)return;
   const v=DB.vehicles.find(x=>x.id===h.vehicleId);
-  const docsHtml=(h.docs&&h.docs.length)?h.docs.map((d,i)=>`<img src="${d.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Dok ${i+1}">`).join(''):'<em>Keine Dokumente beigefügt</em>';
   const vehiclePhotosHtml=(h.vehiclePhotos&&h.vehiclePhotos.length)?h.vehiclePhotos.map((photo,i)=>`<img src="${photo.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Fahrzeugfoto ${i+1}">`).join(''):'<em>Keine Fotos beigefügt</em>';
   const interiorPhotosHtml=(h.interiorPhotos&&h.interiorPhotos.length)?h.interiorPhotos.map((photo,i)=>`<img src="${photo.data}" style="max-width:220px;max-height:160px;border:1px solid #ccc;border-radius:6px;margin:4px" alt="Innenraumfoto ${i+1}">`).join(''):'<em>Keine Fotos beigefügt</em>';
   const sigHtml=h.signature?`<img src="${h.signature}" style="max-width:320px;border:1px solid #ccc;border-radius:6px" alt="Unterschrift">`:'<em>Keine Unterschrift</em>';
   const w=window.open('','_blank','width=800,height=650');
   if(!w){toast('Druckfenster wurde blockiert.','error');return;}
-  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Übergabeprotokoll</title>
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Übergabeformular</title>
   <style>body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:780px;margin:0 auto}
   h1{font-size:1.4rem;margin-bottom:4px}h2{font-size:1rem;color:#555;margin-top:24px;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:4px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-bottom:16px}
@@ -2481,8 +2460,8 @@ window.printHandover=function(id){
   .sig-box{border:1px solid #ccc;border-radius:6px;padding:8px;background:#fafafa;display:inline-block}
   @media print{button{display:none}}
   </style></head><body>
-  <h1>Übergabeprotokoll – ${h.type}</h1>
-  <p style="color:#555;font-size:.85rem">MoonStar Fleet · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+  <h1>Übergabeformular – ${h.type}</h1>
+  <p style="color:#555;font-size:.85rem">Fleet-Log 24 · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
   <h2>Fahrzeugdaten</h2>
   <div class="grid">
     <div class="item"><label>Fahrzeug</label><span>${escPrint(v?.name||'—')}</span></div>
@@ -2496,19 +2475,16 @@ window.printHandover=function(id){
     <div class="item"><label>Typ</label><span>${escPrint(h.type)}</span></div>
     <div class="item"><label>Übergeber</label><span>${escPrint(h.from)}</span></div>
     <div class="item"><label>Empfänger</label><span>${escPrint(h.to)}</span></div>
+    ${h.driver?`<div class="item"><label>Fahrer / Nutzer</label><span>${escPrint(h.driver)}</span></div>`:''}
+    ${h.fuelLevel?`<div class="item"><label>Tankstand</label><span>${escPrint(h.fuelLevel)}</span></div>`:''}
   </div>
   ${h.notes?`<h2>Fahrzeugzustand / Bemerkungen</h2><p>${escPrint(h.notes)}</p>`:''}
-  ${(h.planDriver||h.planPlate||h.planTour)?`<h2>Tageseinsatzplan</h2><div class="grid">
-    <div class="item"><label>Fahrername</label><span>${escPrint(h.planDriver||'—')}</span></div>
-    <div class="item"><label>Kennzeichen</label><span>${escPrint(h.planPlate||'—')}</span></div>
-    <div class="item" style="grid-column:1/-1"><label>Tournummern</label><span>${escPrint(h.planTour||'—')}</span></div>
-  </div>`:''}
-  <h2>Fahrzeugoptik</h2>
+  ${h.condition?`<h2>Zustand / bekannte Schäden</h2><p>${escPrint(h.condition)}</p>`:''}
+  ${h.accessories?`<h2>Zubehör / übergebene Gegenstände</h2><p>${escPrint(h.accessories)}</p>`:''}
+  <h2>Außenfotos</h2>
   <div style="display:flex;flex-wrap:wrap;gap:10px">${vehiclePhotosHtml}</div>
-  <h2>Innenraum</h2>
+  <h2>Innenraumfotos</h2>
   <div style="display:flex;flex-wrap:wrap;gap:10px">${interiorPhotosHtml}</div>
-  <h2>Ausweisdokumente (Führerschein / Personalausweis)</h2>
-  <div style="display:flex;flex-wrap:wrap;gap:10px">${docsHtml}</div>
   <h2>Unterschrift des Empfängers</h2>
   <div class="sig-box">${sigHtml}</div>
   <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
@@ -2707,7 +2683,10 @@ function saveDriver(){
         DB.vehicles.forEach(vehicle=>{if(driverNameKey(vehicle.driver)===driverNameKey(previousName))vehicle.driver=name;});
         DB.dailyPlans.forEach(plan=>{if(driverNameKey(plan.driver)===driverNameKey(previousName))plan.driver=name;});
         DB.accidentReports.forEach(report=>{if(driverNameKey(report.driver)===driverNameKey(previousName))report.driver=name;});
-        DB.handovers.forEach(handover=>{if(driverNameKey(handover.planDriver)===driverNameKey(previousName))handover.planDriver=name;});
+        DB.handovers.forEach(handover=>{
+          if(driverNameKey(handover.driver)===driverNameKey(previousName))handover.driver=name;
+          if(driverNameKey(handover.planDriver)===driverNameKey(previousName))handover.planDriver=name;
+        });
       }
       saveData(DB);
       toast('Fahrer aktualisiert.');
@@ -3002,7 +2981,7 @@ function renderHandoversList(){
   let list=[...DB.handovers].sort((a,b)=>new Date(b.date)-new Date(a.date));
   if(hoFilterSearch){
     const q=hoFilterSearch.toLowerCase();
-    list=list.filter(h=>[h.from,h.to,h.notes,h.type,h.planDriver,h.planPlate,h.planTour].some(f=>(f||'').toLowerCase().includes(q))||
+    list=list.filter(h=>[h.from,h.to,h.notes,h.type,h.driver,h.fuelLevel,h.condition,h.accessories].some(f=>(f||'').toLowerCase().includes(q))||
       (DB.vehicles.find(v=>v.id===h.vehicleId)?.name||'').toLowerCase().includes(q));
   }
   if(hoFilterType)list=list.filter(h=>h.type===hoFilterType);
@@ -3027,6 +3006,7 @@ function renderHandoversList(){
           <span style="font-weight:600;font-size:.9rem">${esc(fmtDatetime(h.date))}</span>
           <span onclick="event.stopPropagation();navigate('detail','${h.vehicleId}')" style="font-size:.82rem;color:var(--primary);cursor:pointer;font-weight:600">${esc(v?.name||'?')} (${esc(v?.plate||'?')})</span>
           <span style="font-size:.82rem;color:var(--muted)">${esc(h.from)} → ${esc(h.to)}</span>
+          ${h.driver?`<span style="font-size:.75rem;color:var(--muted2)">Fahrer: ${esc(h.driver)}</span>`:''}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
           <button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openHandoverModal('${h.vehicleId}','${h.id}')">✏</button>
@@ -3040,15 +3020,15 @@ function renderHandoversList(){
           <div class="handover-info-item"><label>Fahrzeug</label><span>${esc(v?.name||'—')}</span></div>
           <div class="handover-info-item"><label>Übergeber</label><span>${esc(h.from)}</span></div>
           <div class="handover-info-item"><label>Empfänger</label><span>${esc(h.to)}</span></div>
+          ${h.driver?`<div class="handover-info-item"><label>Fahrer / Nutzer</label><span>${esc(h.driver)}</span></div>`:''}
+          ${h.fuelLevel?`<div class="handover-info-item"><label>Tankstand</label><span>${esc(h.fuelLevel)}</span></div>`:''}
           ${h.km?`<div class="handover-info-item"><label>Kilometerstand</label><span>${Number(h.km).toLocaleString('de-DE')} km</span></div>`:''}
           ${h.notes?`<div class="handover-info-item" style="grid-column:1/-1"><label>Bemerkungen</label><span>${esc(h.notes)}</span></div>`:''}
+          ${h.condition?`<div class="handover-info-item" style="grid-column:1/-1"><label>Zustand / Schäden</label><span>${esc(h.condition)}</span></div>`:''}
+          ${h.accessories?`<div class="handover-info-item" style="grid-column:1/-1"><label>Zubehör</label><span>${esc(h.accessories)}</span></div>`:''}
         </div>
-        ${renderHandoverPlanSection(h)}
-        ${renderHandoverPhotoSection('Fahrzeugoptik',h.vehiclePhotos,'Fahrzeugfoto')}
-        ${renderHandoverPhotoSection('Innenraum',h.interiorPhotos,'Innenraumfoto')}
-        ${h.docs&&h.docs.length?`<div style="margin-bottom:14px">
-          <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Dokumente (${h.docs.length})</div>
-          <div class="doc-preview-grid">${h.docs.map((d,i)=>`<div class="doc-thumb"><img src="${d.data}" alt="Dok"><div class="doc-label">${esc(d.name||'Dok '+(i+1))}</div></div>`).join('')}</div></div>`:''}
+        ${renderHandoverPhotoSection('Außenfotos',h.vehiclePhotos,'Außenfoto')}
+        ${renderHandoverPhotoSection('Innenraumfotos',h.interiorPhotos,'Innenraumfoto')}
         ${h.signature?`<div><div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Unterschrift</div><img class="sig-display" src="${h.signature}" style="max-width:300px" alt="Unterschrift"></div>`:''}
       </div>
     </div>`;
@@ -3078,7 +3058,6 @@ document.getElementById('ticket-clear-filters').addEventListener('click',()=>{
 document.getElementById('new-handover-global-btn').addEventListener('click',()=>openHandoverModal(null));
 
 /* ─── Handover modal logic ────────────────────────────────────── */
-let _hmDocs=[];   // [{name, data}]
 let _hmVehiclePhotos=[];   // [{name, data}]
 let _hmInteriorPhotos=[];   // [{name, data}]
 // Signature pad setup
@@ -3189,7 +3168,6 @@ function bindPhotoUpload(buttonId,inputId,store,render){
     e.target.value='';
   });
 }
-bindPhotoUpload('hm-docs-btn','hm-docs-input',_hmDocs,renderDocPreviews);
 bindPhotoUpload('hm-vehicle-photos-btn','hm-vehicle-photos-input',_hmVehiclePhotos,renderVehiclePhotoPreviews);
 bindPhotoUpload('hm-interior-photos-btn','hm-interior-photos-input',_hmInteriorPhotos,renderInteriorPhotoPreviews);
 function renderUploadPreviews(items,wrapId,removeFnName,fallbackLabel){
@@ -3202,16 +3180,12 @@ function renderUploadPreviews(items,wrapId,removeFnName,fallbackLabel){
       <button class="doc-remove" onclick="${removeFnName}(${i})" title="Entfernen">✕</button>
     </div>`).join('');
 }
-function renderDocPreviews(){
-  renderUploadPreviews(_hmDocs,'hm-docs-preview','removeDoc','Dokument');
-}
 function renderVehiclePhotoPreviews(){
   renderUploadPreviews(_hmVehiclePhotos,'hm-vehicle-photos-preview','removeVehiclePhoto','Fahrzeugfoto');
 }
 function renderInteriorPhotoPreviews(){
   renderUploadPreviews(_hmInteriorPhotos,'hm-interior-photos-preview','removeInteriorPhoto','Innenraumfoto');
 }
-window.removeDoc=function(i){_hmDocs.splice(i,1);renderDocPreviews();};
 window.removeVehiclePhoto=function(i){_hmVehiclePhotos.splice(i,1);renderVehiclePhotoPreviews();};
 window.removeInteriorPhoto=function(i){_hmInteriorPhotos.splice(i,1);renderInteriorPhotoPreviews();};
 function replaceUploads(target,items){
@@ -3231,15 +3205,12 @@ function getSelectedVehicleDriver(){
   return DB.vehicles.find(v=>v.id===vehicleId)?.driver||'';
 }
 document.getElementById('hm-vehicle-sel').addEventListener('change',()=>{
-  const plateInput=document.getElementById('hm-plan-plate');
-  const driverInput=document.getElementById('hm-plan-driver');
-  if(!plateInput.value.trim())plateInput.value=getSelectedVehiclePlate();
+  const driverInput=document.getElementById('hm-driver');
   if(!driverInput.value.trim())driverInput.value=getSelectedVehicleDriver();
 });
 
 window.openHandoverModal=function(vehicleId,editId){
   if(!DB.vehicles.length){toast('Bitte zuerst ein Fahrzeug anlegen.','error');return;}
-  replaceUploads(_hmDocs,[]);
   replaceUploads(_hmVehiclePhotos,[]);
   replaceUploads(_hmInteriorPhotos,[]);
   sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
@@ -3248,7 +3219,7 @@ window.openHandoverModal=function(vehicleId,editId){
 
   const editObj=editId?DB.handovers.find(x=>x.id===editId):null;
   if(editObj&&!DB.vehicles.some(v=>v.id===editObj.vehicleId)){toast('Zugehöriges Fahrzeug nicht gefunden.','error');return;}
-  document.getElementById('hm-title').textContent=editId?'Übergabeprotokoll bearbeiten':'Übergabeprotokoll erstellen';
+  document.getElementById('hm-title').textContent=editId?'Übergabeformular bearbeiten':'Übergabeformular erstellen';
   document.getElementById('hm-id').value=editId||'';
   document.getElementById('hm-vehicle-id').value=vehicleId||'';
 
@@ -3262,10 +3233,10 @@ window.openHandoverModal=function(vehicleId,editId){
     document.getElementById('hm-from').value=editObj.from||'';
     document.getElementById('hm-to').value=editObj.to||'';
     document.getElementById('hm-notes').value=editObj.notes||'';
-    document.getElementById('hm-plan-driver').value=editObj.planDriver||'';
-    document.getElementById('hm-plan-plate').value=editObj.planPlate||'';
-    document.getElementById('hm-plan-tour').value=editObj.planTour||'';
-    replaceUploads(_hmDocs,editObj.docs?[...editObj.docs]:[]);
+    document.getElementById('hm-driver').value=editObj.driver||editObj.planDriver||'';
+    document.getElementById('hm-fuel-level').value=editObj.fuelLevel||'';
+    document.getElementById('hm-condition').value=editObj.condition||'';
+    document.getElementById('hm-accessories').value=editObj.accessories||'';
     replaceUploads(_hmVehiclePhotos,editObj.vehiclePhotos?[...editObj.vehiclePhotos]:[]);
     replaceUploads(_hmInteriorPhotos,editObj.interiorPhotos?[...editObj.interiorPhotos]:[]);
   } else {
@@ -3278,11 +3249,11 @@ window.openHandoverModal=function(vehicleId,editId){
     document.getElementById('hm-from').value='';
     document.getElementById('hm-to').value='';
     document.getElementById('hm-notes').value='';
-    document.getElementById('hm-plan-driver').value=getSelectedVehicleDriver();
-    document.getElementById('hm-plan-plate').value=getSelectedVehiclePlate();
-    document.getElementById('hm-plan-tour').value='';
+    document.getElementById('hm-driver').value=getSelectedVehicleDriver();
+    document.getElementById('hm-fuel-level').value='';
+    document.getElementById('hm-condition').value='';
+    document.getElementById('hm-accessories').value='';
   }
-  renderDocPreviews();
   renderVehiclePhotoPreviews();
   renderInteriorPhotoPreviews();
   document.getElementById('handover-modal').classList.add('open');
@@ -3295,10 +3266,8 @@ window.openHandoverModal=function(vehicleId,editId){
 
 function closeHandoverModal(){
   document.getElementById('handover-form').reset();
-  replaceUploads(_hmDocs,[]);
   replaceUploads(_hmVehiclePhotos,[]);
   replaceUploads(_hmInteriorPhotos,[]);
-  renderDocPreviews();
   renderVehiclePhotoPreviews();
   renderInteriorPhotoPreviews();
   sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
@@ -3319,9 +3288,10 @@ function saveHandover(e){
   const from=document.getElementById('hm-from').value.trim();
   const to=document.getElementById('hm-to').value.trim();
   const notes=document.getElementById('hm-notes').value.trim();
-  const planDriver=document.getElementById('hm-plan-driver').value.trim();
-  const planPlate=document.getElementById('hm-plan-plate').value.trim();
-  const planTour=document.getElementById('hm-plan-tour').value.trim();
+  const driver=document.getElementById('hm-driver').value.trim();
+  const fuelLevel=document.getElementById('hm-fuel-level').value;
+  const condition=document.getElementById('hm-condition').value.trim();
+  const accessories=document.getElementById('hm-accessories').value.trim();
   const editId=document.getElementById('hm-id').value;
 
   if(!vehicleId||!date||!from||!to){toast('Bitte alle Pflichtfelder ausfüllen.','error');return;}
@@ -3339,8 +3309,7 @@ function saveHandover(e){
 
   const entry={
     id:editId||uid(),
-    vehicleId,type,date,km,from,to,notes,planDriver,planPlate,planTour,
-    docs:[..._hmDocs],
+    vehicleId,type,date,km,from,to,notes,driver,fuelLevel,condition,accessories,
     vehiclePhotos:[..._hmVehiclePhotos],
     interiorPhotos:[..._hmInteriorPhotos],
     signature,
@@ -3349,18 +3318,18 @@ function saveHandover(e){
 
   let prevHandover=null;
   try{
-    ensureDriverRecord(planDriver);
+    ensureDriverRecord(driver);
     if(editId){
       const idx=DB.handovers.findIndex(x=>x.id===editId);
-      if(idx===-1){toast('Protokoll konnte nicht gefunden werden.','error');return;}
+      if(idx===-1){toast('Übergabeformular konnte nicht gefunden werden.','error');return;}
       prevHandover=DB.handovers[idx];
       DB.handovers[idx]={...prevHandover,...entry};
       saveData(DB);
-      toast('Protokoll aktualisiert.');
+      toast('Übergabeformular aktualisiert.');
     } else {
       DB.handovers.push(entry);
       saveData(DB);
-      toast('Übergabeprotokoll gespeichert.');
+      toast('Übergabeformular gespeichert.');
     }
   }catch(e){
     DB.drivers=previousDrivers;
@@ -3895,7 +3864,7 @@ window.printECheck=function(id){
   .result-ok{color:#16a34a;font-weight:700}.result-fail{color:#dc2626;font-weight:700}.result-pending{color:#d97706;font-weight:700}
   @media print{button{display:none}}</style></head><body>
   <h1>E-Check – Fahrzeugprüfung</h1>
-  <p style="color:#555;font-size:.85rem">MoonStar Fleet · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+  <p style="color:#555;font-size:.85rem">Fleet-Log 24 · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
   <h2>Fahrzeug & Prüfdaten</h2>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:12px">
     <div><b>Fahrzeug:</b> ${escPrint(v?.name||'—')}</div>
@@ -4144,7 +4113,7 @@ window.printAccidentReport=function(id){
     @media print{button{display:none}}
   </style></head><body>
   <h1>Europäischer Unfallbericht</h1>
-  <p style="color:#555;font-size:.85rem">MoonStar Fleet · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+  <p style="color:#555;font-size:.85rem">Fleet-Log 24 · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
   <h2>Fahrzeug & Grunddaten</h2>
   <div class="grid">
     <div class="item"><label>Fahrzeug</label><span>${escPrint(vehicle?.name||'—')}</span></div>
@@ -4329,7 +4298,7 @@ document.getElementById('status-modal-print').addEventListener('click',()=>{
     @media print{button{display:none}}
   </style></head><body>
   <h1>Fahrzeugliste – ${escPrint(title)}</h1>
-  <p>MoonStar Fleet · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})} · ${list.length} Fahrzeug${list.length!==1?'e':''}</p>
+  <p>Fleet-Log 24 · Ausgestellt am ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})} · ${list.length} Fahrzeug${list.length!==1?'e':''}</p>
   ${list.length===0?'<p><em>Keine Fahrzeuge vorhanden.</em></p>':`
   <table>
     <thead><tr><th>#</th><th>Kennzeichen</th><th>Name</th><th>Marke / Modell</th><th>Status</th><th>Fahrer</th><th>Km-Stand</th><th>Kraftstoff</th></tr></thead>

@@ -1,7 +1,7 @@
-# 🚗 MoonStar Fleet - Professional Fleet Management App
+# 🚗 Fleet-Log 24 - Professional Fleet Management App
 
 ## Overview
-MoonStar Fleet ist ein umfassendes Fuhrparkmanagement-System für die Verwaltung von Fahrzeugen, Fahrern, Schäden, Reparaturen und Strafzetteln in Echtzeit mit cloud-basierter Fotodokumentation.
+Fleet-Log 24 ist ein umfassendes Fuhrparkmanagement-System für die Verwaltung von Fahrzeugen, Fahrern, Schäden, Reparaturen und Strafzetteln in Echtzeit mit cloud-basierter Fotodokumentation.
 
 ## Features
 

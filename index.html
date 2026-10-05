@@ -1250,6 +1250,71 @@ tr:hover td{background:rgba(255,255,255,.025)}
 
         <div style="margin-bottom:18px">
           <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
+            Wichtige Prüfrubrik
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Fahrzeugstatus</label>
+              <select class="form-control" id="hm-readiness-status">
+                <option value="">—</option>
+                <option value="Einsatzbereit">Einsatzbereit</option>
+                <option value="Eingeschränkt einsatzbereit">Eingeschränkt einsatzbereit</option>
+                <option value="Nicht einsatzbereit">Nicht einsatzbereit</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Schlüssel / Karten</label>
+              <select class="form-control" id="hm-key-status">
+                <option value="">—</option>
+                <option value="Vollständig">Vollständig</option>
+                <option value="Teilweise vorhanden">Teilweise vorhanden</option>
+                <option value="Fehlt">Fehlt</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Fahrzeugunterlagen</label>
+              <select class="form-control" id="hm-document-status">
+                <option value="">—</option>
+                <option value="Vollständig">Vollständig</option>
+                <option value="Teilweise vorhanden">Teilweise vorhanden</option>
+                <option value="Fehlt">Fehlt</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Sicherheitsausstattung</label>
+              <select class="form-control" id="hm-safety-status">
+                <option value="">—</option>
+                <option value="Vollständig">Vollständig</option>
+                <option value="Teilweise vorhanden">Teilweise vorhanden</option>
+                <option value="Fehlt">Fehlt</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Sauberkeit</label>
+              <select class="form-control" id="hm-cleanliness-status">
+                <option value="">—</option>
+                <option value="Sauber">Sauber</option>
+                <option value="Leicht verschmutzt">Leicht verschmutzt</option>
+                <option value="Stark verschmutzt">Stark verschmutzt</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Neue Mängel</label>
+              <select class="form-control" id="hm-damage-check-status">
+                <option value="">—</option>
+                <option value="Keine neuen Mängel">Keine neuen Mängel</option>
+                <option value="Neue Mängel vorhanden">Neue Mängel vorhanden</option>
+              </select>
+            </div>
+            <div class="form-group span2">
+              <label>Prüfnotizen / Übergabehinweise</label>
+              <textarea class="form-control" id="hm-check-notes" placeholder="Wichtige Kontrollpunkte, offene Hinweise, Rückgabebedingungen …" style="min-height:90px"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px">
             Außenfotos (optional)
           </div>
           <p style="font-size:.78rem;color:var(--muted2);margin-bottom:10px">Lade Fotos vom äußeren Fahrzeugzustand hoch.</p>
@@ -1668,6 +1733,13 @@ function normalizeHandoverRecord(record){
     fuelLevel:String(entry.fuelLevel||''),
     condition:String(entry.condition||''),
     accessories:String(entry.accessories||''),
+    readinessStatus:String(entry.readinessStatus||''),
+    keyStatus:String(entry.keyStatus||''),
+    documentStatus:String(entry.documentStatus||''),
+    safetyStatus:String(entry.safetyStatus||''),
+    cleanlinessStatus:String(entry.cleanlinessStatus||''),
+    damageCheckStatus:String(entry.damageCheckStatus||''),
+    checkNotes:String(entry.checkNotes||''),
     vehiclePhotos:normalizeMediaItems(entry.vehiclePhotos),
     interiorPhotos:normalizeMediaItems(entry.interiorPhotos),
     signature:String(entry.signature||''),
@@ -1746,6 +1818,13 @@ function normalizeDB(data){
       next.fuelLevel!==(entry?.fuelLevel||'')||
       next.condition!==(entry?.condition||'')||
       next.accessories!==(entry?.accessories||'')||
+      next.readinessStatus!==(entry?.readinessStatus||'')||
+      next.keyStatus!==(entry?.keyStatus||'')||
+      next.documentStatus!==(entry?.documentStatus||'')||
+      next.safetyStatus!==(entry?.safetyStatus||'')||
+      next.cleanlinessStatus!==(entry?.cleanlinessStatus||'')||
+      next.damageCheckStatus!==(entry?.damageCheckStatus||'')||
+      next.checkNotes!==(entry?.checkNotes||'')||
       !Array.isArray(entry?.vehiclePhotos)||
       !Array.isArray(entry?.interiorPhotos)
     )changed=true;
@@ -2441,6 +2520,7 @@ function renderHandoverList(list){
           ${h.condition?`<div class="handover-info-item" style="grid-column:1/-1"><label>Zustand / Schäden</label><span>${esc(h.condition)}</span></div>`:''}
           ${h.accessories?`<div class="handover-info-item" style="grid-column:1/-1"><label>Zubehör</label><span>${esc(h.accessories)}</span></div>`:''}
         </div>
+        ${renderHandoverCheckSection(h)}
         ${renderHandoverPhotoSection('Außenfotos',h.vehiclePhotos,'Außenfoto')}
         ${renderHandoverPhotoSection('Innenraumfotos',h.interiorPhotos,'Innenraumfoto')}
         ${h.signature?`
@@ -2461,6 +2541,21 @@ function renderHandoverPhotoSection(title,photos,labelPrefix){
         <img src="${photo.data}" alt="${esc(photo.name||labelPrefix+' '+(i+1))}">
         <div class="doc-label">${esc(photo.name||labelPrefix+' '+(i+1))}</div>
       </div>`).join('')}
+    </div>
+  </div>`;
+}
+function renderHandoverCheckSection(h){
+  if(!h.readinessStatus&&!h.keyStatus&&!h.documentStatus&&!h.safetyStatus&&!h.cleanlinessStatus&&!h.damageCheckStatus&&!h.checkNotes)return'';
+  return`<div style="margin-bottom:14px">
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Wichtige Prüfrubrik</div>
+    <div class="handover-info-grid">
+      ${h.readinessStatus?`<div class="handover-info-item"><label>Fahrzeugstatus</label><span>${esc(h.readinessStatus)}</span></div>`:''}
+      ${h.keyStatus?`<div class="handover-info-item"><label>Schlüssel / Karten</label><span>${esc(h.keyStatus)}</span></div>`:''}
+      ${h.documentStatus?`<div class="handover-info-item"><label>Fahrzeugunterlagen</label><span>${esc(h.documentStatus)}</span></div>`:''}
+      ${h.safetyStatus?`<div class="handover-info-item"><label>Sicherheitsausstattung</label><span>${esc(h.safetyStatus)}</span></div>`:''}
+      ${h.cleanlinessStatus?`<div class="handover-info-item"><label>Sauberkeit</label><span>${esc(h.cleanlinessStatus)}</span></div>`:''}
+      ${h.damageCheckStatus?`<div class="handover-info-item"><label>Neue Mängel</label><span>${esc(h.damageCheckStatus)}</span></div>`:''}
+      ${h.checkNotes?`<div class="handover-info-item" style="grid-column:1/-1"><label>Prüfnotizen</label><span>${esc(h.checkNotes)}</span></div>`:''}
     </div>
   </div>`;
 }
@@ -2546,6 +2641,13 @@ window.printHandover=function(id){
           ${h.notes?`<div class="info wide"><label>Bemerkungen</label><span>${escPrint(h.notes)}</span></div>`:''}
           ${h.condition?`<div class="info wide"><label>Zustand / bekannte Schäden</label><span>${escPrint(h.condition)}</span></div>`:''}
           ${h.accessories?`<div class="info wide"><label>Zubehör / übergebene Gegenstände</label><span>${escPrint(h.accessories)}</span></div>`:''}
+          ${h.readinessStatus?`<div class="info"><label>Fahrzeugstatus</label><span>${escPrint(h.readinessStatus)}</span></div>`:''}
+          ${h.keyStatus?`<div class="info"><label>Schlüssel / Karten</label><span>${escPrint(h.keyStatus)}</span></div>`:''}
+          ${h.documentStatus?`<div class="info"><label>Fahrzeugunterlagen</label><span>${escPrint(h.documentStatus)}</span></div>`:''}
+          ${h.safetyStatus?`<div class="info"><label>Sicherheitsausstattung</label><span>${escPrint(h.safetyStatus)}</span></div>`:''}
+          ${h.cleanlinessStatus?`<div class="info"><label>Sauberkeit</label><span>${escPrint(h.cleanlinessStatus)}</span></div>`:''}
+          ${h.damageCheckStatus?`<div class="info"><label>Neue Mängel</label><span>${escPrint(h.damageCheckStatus)}</span></div>`:''}
+          ${h.checkNotes?`<div class="info wide"><label>Prüfnotizen / Übergabehinweise</label><span>${escPrint(h.checkNotes)}</span></div>`:''}
         </div>
       </div>
       <div class="section">
@@ -3053,7 +3155,7 @@ function renderHandoversList(){
   let list=[...DB.handovers].map(normalizeHandoverRecord).sort((a,b)=>new Date(b.date)-new Date(a.date));
   if(hoFilterSearch){
     const q=hoFilterSearch.toLowerCase();
-    list=list.filter(h=>[h.from,h.to,h.notes,h.type,h.driver,h.fuelLevel,h.condition,h.accessories].some(f=>(f||'').toLowerCase().includes(q))||
+    list=list.filter(h=>[h.from,h.to,h.notes,h.type,h.driver,h.fuelLevel,h.condition,h.accessories,h.readinessStatus,h.keyStatus,h.documentStatus,h.safetyStatus,h.cleanlinessStatus,h.damageCheckStatus,h.checkNotes].some(f=>(f||'').toLowerCase().includes(q))||
       (DB.vehicles.find(v=>v.id===h.vehicleId)?.name||'').toLowerCase().includes(q));
   }
   if(hoFilterType)list=list.filter(h=>h.type===hoFilterType);
@@ -3099,6 +3201,7 @@ function renderHandoversList(){
           ${h.condition?`<div class="handover-info-item" style="grid-column:1/-1"><label>Zustand / Schäden</label><span>${esc(h.condition)}</span></div>`:''}
           ${h.accessories?`<div class="handover-info-item" style="grid-column:1/-1"><label>Zubehör</label><span>${esc(h.accessories)}</span></div>`:''}
         </div>
+        ${renderHandoverCheckSection(h)}
         ${renderHandoverPhotoSection('Außenfotos',h.vehiclePhotos,'Außenfoto')}
         ${renderHandoverPhotoSection('Innenraumfotos',h.interiorPhotos,'Innenraumfoto')}
         ${h.signature?`<div><div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Unterschrift</div><img class="sig-display" src="${h.signature}" style="max-width:300px" alt="Unterschrift"></div>`:''}
@@ -3272,6 +3375,10 @@ function getSelectedVehicleDriver(){
   const vehicleId=document.getElementById('hm-vehicle-sel').value;
   return DB.vehicles.find(v=>v.id===vehicleId)?.driver||'';
 }
+function getSelectedVehicleKm(){
+  const vehicleId=document.getElementById('hm-vehicle-sel').value;
+  return DB.vehicles.find(v=>v.id===vehicleId)?.km||'';
+}
 const handoverEls={
   modal:document.getElementById('handover-modal'),
   form:document.getElementById('handover-form'),
@@ -3289,6 +3396,13 @@ const handoverEls={
   fuelLevel:document.getElementById('hm-fuel-level'),
   condition:document.getElementById('hm-condition'),
   accessories:document.getElementById('hm-accessories'),
+  readinessStatus:document.getElementById('hm-readiness-status'),
+  keyStatus:document.getElementById('hm-key-status'),
+  documentStatus:document.getElementById('hm-document-status'),
+  safetyStatus:document.getElementById('hm-safety-status'),
+  cleanlinessStatus:document.getElementById('hm-cleanliness-status'),
+  damageCheckStatus:document.getElementById('hm-damage-check-status'),
+  checkNotes:document.getElementById('hm-check-notes'),
   error:document.getElementById('sig-error'),
   closeBtn:document.getElementById('hm-close'),
   cancelBtn:document.getElementById('hm-cancel'),
@@ -3316,7 +3430,7 @@ function fillHandoverForm(handover,selectedVehicleId){
   handoverEls.hiddenVehicleId.value=selectedVehicleId;
   handoverEls.type.value=handover?.type||'Übergabe';
   handoverEls.date.value=handover?.date||getDefaultHandoverDate();
-  handoverEls.km.value=handover?.km||'';
+  handoverEls.km.value=handover?.km||getSelectedVehicleKm();
   handoverEls.from.value=handover?.from||'';
   handoverEls.to.value=handover?.to||'';
   handoverEls.notes.value=handover?.notes||'';
@@ -3324,6 +3438,13 @@ function fillHandoverForm(handover,selectedVehicleId){
   handoverEls.fuelLevel.value=handover?.fuelLevel||'';
   handoverEls.condition.value=handover?.condition||'';
   handoverEls.accessories.value=handover?.accessories||'';
+  handoverEls.readinessStatus.value=handover?.readinessStatus||'';
+  handoverEls.keyStatus.value=handover?.keyStatus||'';
+  handoverEls.documentStatus.value=handover?.documentStatus||'';
+  handoverEls.safetyStatus.value=handover?.safetyStatus||'';
+  handoverEls.cleanlinessStatus.value=handover?.cleanlinessStatus||'';
+  handoverEls.damageCheckStatus.value=handover?.damageCheckStatus||'';
+  handoverEls.checkNotes.value=handover?.checkNotes||'';
   replaceUploads(_hmVehiclePhotos,handover?.vehiclePhotos||[]);
   replaceUploads(_hmInteriorPhotos,handover?.interiorPhotos||[]);
   renderVehiclePhotoPreviews();
@@ -3331,6 +3452,7 @@ function fillHandoverForm(handover,selectedVehicleId){
 }
 handoverEls.vehicle.addEventListener('change',()=>{
   if(!handoverEls.driver.value.trim())handoverEls.driver.value=getSelectedVehicleDriver();
+  if(!handoverEls.km.value.trim())handoverEls.km.value=getSelectedVehicleKm();
 });
 window.openHandoverModal=function(vehicleId=null,editId=''){
   if(!DB.vehicles.length){toast('Bitte zuerst ein Fahrzeug anlegen.','error');return;}
@@ -3392,6 +3514,13 @@ function saveHandover(e){
     fuelLevel:handoverEls.fuelLevel.value,
     condition:handoverEls.condition.value.trim(),
     accessories:handoverEls.accessories.value.trim(),
+    readinessStatus:handoverEls.readinessStatus.value,
+    keyStatus:handoverEls.keyStatus.value,
+    documentStatus:handoverEls.documentStatus.value,
+    safetyStatus:handoverEls.safetyStatus.value,
+    cleanlinessStatus:handoverEls.cleanlinessStatus.value,
+    damageCheckStatus:handoverEls.damageCheckStatus.value,
+    checkNotes:handoverEls.checkNotes.value.trim(),
     vehiclePhotos:[..._hmVehiclePhotos],
     interiorPhotos:[..._hmInteriorPhotos],
     signature,

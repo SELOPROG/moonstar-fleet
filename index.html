@@ -3269,14 +3269,19 @@ let _hmInteriorPhotos=[];   // [{name, data}]
 const sigCanvas=document.getElementById('sig-canvas');
 const sigCtx=sigCanvas?.getContext?.('2d')||null;
 let _sigDrawing=false, _sigLast={x:0,y:0};
+function hasUsableSignatureCanvas(){
+  return Boolean(sigCanvas&&sigCtx&&sigCanvas.width>1&&sigCanvas.height>1);
+}
 
 function resizeSigCanvas(){
   if(!sigCanvas||!sigCtx)return;
   const currentSignature=isSigEmpty()?'':sigCanvas.toDataURL('image/png');
   const rect=sigCanvas.parentElement.getBoundingClientRect();
   const dpr=window.devicePixelRatio||1;
-  sigCanvas.width=rect.width*dpr;
+  const cssWidth=Math.max(rect.width||sigCanvas.parentElement?.clientWidth||0,320);
+  sigCanvas.width=cssWidth*dpr;
   sigCanvas.height=160*dpr;
+  sigCanvas.style.width=cssWidth+'px';
   sigCanvas.style.height='160px';
   sigCtx.setTransform(dpr,0,0,dpr,0,0);
   sigCtx.strokeStyle='#111';
@@ -3301,7 +3306,7 @@ function drawSignaturePoint(point){
   sigCtx.stroke();
 }
 function updateSignatureUiState(){
-  const hasSignature=!isSigEmpty();
+  const hasSignature=hasUsableSignatureCanvas()&&!isSigEmpty();
   document.getElementById('sig-wrap').classList.toggle('has-signature',hasSignature);
   document.getElementById('sig-placeholder').style.display=hasSignature?'none':'flex';
 }
@@ -3342,10 +3347,14 @@ document.getElementById('sig-clear').addEventListener('click',()=>{
   updateSignatureUiState();
 });
 function isSigEmpty(){
-  if(!sigCtx||!sigCanvas)return true;
-  const d=sigCtx.getImageData(0,0,sigCanvas.width,sigCanvas.height).data;
-  for(let i=3;i<d.length;i+=4)if(d[i]>10)return false;
-  return true;
+  if(!hasUsableSignatureCanvas())return true;
+  try{
+    const d=sigCtx.getImageData(0,0,sigCanvas.width,sigCanvas.height).data;
+    for(let i=3;i<d.length;i+=4)if(d[i]>10)return false;
+    return true;
+  }catch{
+    return true;
+  }
 }
 
 function drawSignature(signature){

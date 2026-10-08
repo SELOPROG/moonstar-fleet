@@ -1,0 +1,28 @@
+{
+  "name": "moonstar-fleet",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fleet-Log 24 ist ein umfassendes Fuhrparkmanagement-System für die Verwaltung von Fahrzeugen, Fahrern, Schäden, Reparaturen und Strafzetteln in Echtzeit mit cloud-basierter Fotodokumentation.",
+  "scripts": {
+    "build:web": "node scripts/prepare-web.mjs",
+    "sync:ios": "npm run build:web && npx cap sync ios",
+    "open:ios": "npm run sync:ios && npx cap open ios"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://localhost:26831/SELOPROG/moonstar-fleet"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
+  }
+}

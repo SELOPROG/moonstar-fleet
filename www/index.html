@@ -47,6 +47,10 @@ body{
   display:flex;
   flex-direction:column;
   overflow-x:hidden;
+  padding-top:env(safe-area-inset-top);
+  padding-right:env(safe-area-inset-right);
+  padding-bottom:env(safe-area-inset-bottom);
+  padding-left:env(safe-area-inset-left);
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────── */
@@ -236,6 +240,26 @@ nav{flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:3px}
   cursor:pointer;
 }
 .filter-select:focus{border-color:var(--primary)}
+.hosting-banner{
+  margin-bottom:20px;
+  padding:14px 16px;
+  border-radius:var(--radius);
+  border:1px solid rgba(56,189,248,.22);
+  background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(129,140,248,.08));
+}
+.hosting-banner strong{
+  display:block;
+  color:var(--primary);
+  font-size:.8rem;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  margin-bottom:4px;
+}
+.hosting-banner span{
+  font-size:.86rem;
+  color:var(--text);
+  line-height:1.45;
+}
 
 /* ─── Vehicle grid ──────────────────────────────────────────────── */
 .vehicle-grid{
@@ -752,6 +776,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
   <div class="sidebar-footer">
     <div style="font-size:.72rem;color:var(--muted2)">Fleet-Log 24 v1.0</div>
     <div style="font-size:.72rem;color:var(--muted2)">Alle Daten lokal im Browser</div>
+    <div style="font-size:.72rem;color:var(--primary)">Öffentliche Web-Version aktiv</div>
   </div>
 </aside>
 <div id="sidebar-overlay"></div>
@@ -779,6 +804,10 @@ tr:hover td{background:rgba(255,255,255,.025)}
 
     <!-- ─── DASHBOARD ──────────────────────────────────────────── -->
     <div class="view active" id="view-dashboard">
+      <div class="hosting-banner">
+        <strong>Hinweis zur Online-Version</strong>
+        <span>Diese veröffentlichte Web-App speichert Daten lokal in diesem Browser. Für ein anderes Gerät oder nach dem Löschen von Browserdaten sind die Einträge dort nicht automatisch vorhanden.</span>
+      </div>
       <div class="stat-grid" id="dash-stats"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;flex-wrap:wrap" id="dash-panels"></div>
     </div>

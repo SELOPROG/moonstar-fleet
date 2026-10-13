@@ -3,6 +3,7 @@ name: Deploy Fleet-Log 24 to Pages
 on:
   push:
     branches:
+      - main
       - copilot/fix-ui-record-refresh
   workflow_dispatch:
 

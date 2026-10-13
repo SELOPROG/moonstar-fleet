@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const webDir = resolve(rootDir, 'www');
-const filesToCopy = ['index.html', 'manifest.webmanifest', 'icon.svg'];
+const filesToCopy = ['index.html', 'manifest.webmanifest', 'icon.svg', '404.html'];
 
 await mkdir(webDir, { recursive: true });
 

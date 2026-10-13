@@ -121,6 +121,23 @@ Ein direkter iOS-Download-Link (z. B. TestFlight oder signierte `.ipa`) entsteht
 - optional TestFlight für die Verteilung
 
 Sobald das Projekt in Xcode gebaut und signiert ist, kann daraus ein echter Installations- oder TestFlight-Link erstellt werden.
+
+## Web-App online stellen
+
+Für dieses Repository ist jetzt ein GitHub-Pages-Workflow vorbereitet.
+
+Voraussichtliche URL nach erfolgreichem Deployment:
+
+```text
+https://seloprog.github.io/moonstar-fleet/
+```
+
+Der Workflow baut die Web-Dateien automatisch aus `index.html` nach `www/` und veröffentlicht sie über GitHub Pages.
+
+Wichtig:
+- GitHub Pages muss im Repository für **GitHub Actions** als Quelle aktiviert sein.
+- Der aktuelle Workflow läuft bei Pushes auf den Branch `copilot/fix-ui-record-refresh` oder manuell per `workflow_dispatch`.
+- Nach dem ersten erfolgreichen Lauf erscheint die Seite unter der URL oben.
 - AWS S3-Bucket konfiguriert
 - Firebase-Projekt eingerichtet
 

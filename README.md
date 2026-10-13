@@ -1,7 +1,9 @@
-# 🚗 MoonStar Fleet - Professional Fleet Management App
+# 🚗 Fleet-Log 24 - Professional Fleet Management App
+
+> Hinweis: Dieses Repository enthält aktuell eine lokale Single-Page-App in `index.html` und zusätzlich ein Capacitor-iOS-Projekt zum Testen als iPhone-/iPad-App.
 
 ## Overview
-MoonStar Fleet ist ein umfassendes Fuhrparkmanagement-System für die Verwaltung von Fahrzeugen, Fahrern, Schäden, Reparaturen und Strafzetteln in Echtzeit mit cloud-basierter Fotodokumentation.
+Fleet-Log 24 ist ein umfassendes Fuhrparkmanagement-System für die Verwaltung von Fahrzeugen, Fahrern, Schäden, Reparaturen und Strafzetteln in Echtzeit mit cloud-basierter Fotodokumentation.
 
 ## Features
 
@@ -78,6 +80,64 @@ MoonStar Fleet ist ein umfassendes Fuhrparkmanagement-System für die Verwaltung
 ### Voraussetzungen
 - Node.js 16+ und npm
 - PostgreSQL-Datenbank
+
+## iOS-App lokal testen
+
+Die Web-App kann jetzt als iOS-App-Hülle mit Capacitor geöffnet und in Xcode getestet werden.
+
+### 1. Abhängigkeiten installieren
+
+```bash
+npm install
+```
+
+### 2. Web-Dateien für die App vorbereiten
+
+```bash
+npm run build:web
+```
+
+### 3. iOS-Projekt synchronisieren
+
+```bash
+npm run sync:ios
+```
+
+### 4. In Xcode öffnen
+
+```bash
+npm run open:ios
+```
+
+Danach kannst du die App im iOS-Simulator oder auf einem echten iPhone testen.
+
+## Wichtiger Hinweis zum Download-Link
+
+Ein direkter iOS-Download-Link (z. B. TestFlight oder signierte `.ipa`) entsteht nicht automatisch aus diesem Repository. Dafür brauchst du:
+
+- einen Mac mit Xcode
+- ein Apple-Developer-Konto
+- eine Signierung / Provisioning-Konfiguration
+- optional TestFlight für die Verteilung
+
+Sobald das Projekt in Xcode gebaut und signiert ist, kann daraus ein echter Installations- oder TestFlight-Link erstellt werden.
+
+## Web-App online stellen
+
+Für dieses Repository ist jetzt ein GitHub-Pages-Workflow vorbereitet.
+
+Voraussichtliche URL nach erfolgreichem Deployment:
+
+```text
+https://seloprog.github.io/moonstar-fleet/
+```
+
+Der Workflow baut die Web-Dateien automatisch aus `index.html` nach `www/` und veröffentlicht sie über GitHub Pages.
+
+Wichtig:
+- GitHub Pages muss im Repository für **GitHub Actions** als Quelle aktiviert sein.
+- Der aktuelle Workflow läuft bei Pushes auf den Branch `copilot/fix-ui-record-refresh` oder manuell per `workflow_dispatch`.
+- Nach dem ersten erfolgreichen Lauf erscheint die Seite unter der URL oben.
 - AWS S3-Bucket konfiguriert
 - Firebase-Projekt eingerichtet
 
